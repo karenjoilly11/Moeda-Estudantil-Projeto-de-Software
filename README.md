@@ -56,6 +56,7 @@
 ## 📎 Documentos Complementares
 
 - [Diagrama de Casos de Uso](./Modelagem/Caso%20de%20Uso/Caso%20de%20Uso%20-%20Sprint%203%20-%20Projeto%20de%20Software.png)
+- [Diagrama de Classe](./Modelagem/Classe/Moeda Estudantil - Diagrama de Classe - Sprint 3.png)
 - [Histórias de Usuário em PDF](./docs/historias-de-usuario/historias-de-usuario.pdf)
 
 ---
