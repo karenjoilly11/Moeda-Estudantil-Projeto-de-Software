@@ -1,10 +1,14 @@
 package com.moedaestudantil.api.config;
 
+import com.moedaestudantil.api.entities.Aluno;
 import com.moedaestudantil.api.entities.Instituicao;
 import com.moedaestudantil.api.entities.Professor;
+import com.moedaestudantil.api.entities.Vantagem;
 import com.moedaestudantil.api.enums.TipoUsuario;
+import com.moedaestudantil.api.repositories.AlunoRepository;
 import com.moedaestudantil.api.repositories.InstituicaoRepository;
 import com.moedaestudantil.api.repositories.ProfessorRepository;
+import com.moedaestudantil.api.repositories.VantagemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -14,9 +18,11 @@ import java.util.Base64;
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
-    
+
     private final InstituicaoRepository instituicaoRepository;
     private final ProfessorRepository professorRepository;
+    private final AlunoRepository alunoRepository;
+    private final VantagemRepository vantagemRepository;
     
     // Método auxiliar para codificar senha
     private String codificarSenha(String senha) {
@@ -112,6 +118,63 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("      - Prof. Glender da Silva (Sistemas de Informação) - Senha: Glender@2024");
             System.out.println("   📍 Campus Lourdes:");
             System.out.println("      - Prof. Joana Gabriela de Souza (Ciência de Dados) - Senha: Joana@2024");
+
+            // =============================================
+            // VANTAGENS DE EXEMPLO (uma por instituição)
+            // =============================================
+            Vantagem v1 = new Vantagem();
+            v1.setNome("Caderno Universitário PUC");
+            v1.setDescricao("Caderno oficial PUC Minas — 200 folhas, capa dura");
+            v1.setFoto("https://placehold.co/400x300?text=Caderno+PUC");
+            v1.setCustoMoedas(50.0);
+            v1.setInstituicao(pucCoracao);
+            vantagemRepository.save(v1);
+
+            Vantagem v2 = new Vantagem();
+            v2.setNome("Voucher Cantina (R$ 20)");
+            v2.setDescricao("Crédito de R$ 20 na cantina do campus Barreiro");
+            v2.setFoto("https://placehold.co/400x300?text=Voucher+Cantina");
+            v2.setCustoMoedas(100.0);
+            v2.setInstituicao(pucBarreiro);
+            vantagemRepository.save(v2);
+
+            Vantagem v3 = new Vantagem();
+            v3.setNome("Camiseta PUC Minas");
+            v3.setDescricao("Camiseta oficial em algodão — modelos M, G, GG");
+            v3.setFoto("https://placehold.co/400x300?text=Camiseta+PUC");
+            v3.setCustoMoedas(250.0);
+            v3.setInstituicao(pucLourdes);
+            vantagemRepository.save(v3);
+
+            Vantagem v4 = new Vantagem();
+            v4.setNome("Curso de Extensão (1 vaga)");
+            v4.setDescricao("Vaga gratuita em curso de extensão de até 40h");
+            v4.setFoto("https://placehold.co/400x300?text=Curso+Extensao");
+            v4.setCustoMoedas(400.0);
+            v4.setInstituicao(pucCoracao);
+            vantagemRepository.save(v4);
+
+            System.out.println("✅ Vantagens de exemplo carregadas (4 itens).");
+
+            // =============================================
+            // ALUNO DEMO (com saldo inicial pra testar resgate)
+            // Senha: aluno@2024
+            // =============================================
+            Aluno alunoDemo = new Aluno();
+            alunoDemo.setNome("Aluno Demonstração");
+            alunoDemo.setEmail("aluno.demo@pucminas.br");
+            alunoDemo.setSenha(codificarSenha("aluno@2024"));
+            alunoDemo.setTipo(TipoUsuario.ALUNO);
+            alunoDemo.setInstituicao(pucCoracao);
+            alunoDemo.setCpf("99988877766");
+            alunoDemo.setRg("MG12345678");
+            alunoDemo.setEndereco("Rua Exemplo, 100 - BH/MG");
+            alunoDemo.setCurso("Engenharia de Software");
+            alunoDemo.setSaldoMoedas(500.0);
+            alunoRepository.save(alunoDemo);
+
+            System.out.println("✅ Aluno demo cadastrado:");
+            System.out.println("      - aluno.demo@pucminas.br (saldo: 500) - Senha: aluno@2024");
         }
     }
 }

@@ -1,86 +1,135 @@
 import { useState } from "react";
-import { Bell, User, Search } from "lucide-react";
 import { SketchCard } from "./SketchCard";
 import { SketchButton } from "./SketchButton";
 import { SketchBadge } from "./SketchBadge";
 import { motion, AnimatePresence } from "motion/react";
+import { transacaoService } from "@/services/transacaoService";
+import type { CupomValidacao } from "@/types/api";
+
+const formatarData = (iso: string | null) => {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+};
+
+interface ValidacaoLocal {
+  code: string;
+  student: string;
+  reward: string;
+  time: string;
+}
 
 export function CouponValidation() {
   const [couponCode, setCouponCode] = useState("");
-  const [validatedCoupon, setValidatedCoupon] = useState<any>(null);
+  const [validatedCoupon, setValidatedCoupon] = useState<CupomValidacao | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [carregando, setCarregando] = useState(false);
+  const [recentes, setRecentes] = useState<ValidacaoLocal[]>([]);
 
-  const recentValidations = [
-    { id: 1, code: "A8F2-7K9P", student: "Marina S.", reward: "Vale-livro R$50", time: "14:23 - agora" },
-    { id: 2, code: "B12C-3X4M", student: "Bruno L.", reward: "Audiobook 30d", time: "13:56" },
-    { id: 3, code: "C44A-922R", student: "Carla R.", reward: "Combo papelaria", time: "11:08" },
-    { id: 4, code: "D77B-1HBW", student: "Diego A.", reward: "Vale-livro R$50", time: "ontem - 17:44" },
-    { id: 5, code: "E83F-Q05N", student: "Eva P.", reward: "E-book técnico", time: "ontem - 10:17" }
-  ];
-
-  const handleValidate = () => {
-    if (couponCode.trim()) {
-      setValidatedCoupon({
-        code: couponCode,
-        valid: true,
-        student: "Marina Souza",
-        enrollment: "2024.1234",
-        course: "eng. comp.",
-        reward: "Vale-livro R$50",
-        cost: 50,
-        date: "26/abr - 14:23"
-      });
+  const handleValidate = async () => {
+    if (!couponCode.trim()) return;
+    setErro(null);
+    setCarregando(true);
+    try {
+      const resp = await transacaoService.validarCupom(couponCode.trim().toUpperCase());
+      setValidatedCoupon(resp);
+      setRecentes((prev) =>
+        [
+          {
+            code: resp.codigoCupom,
+            student: resp.alunoNome ?? "—",
+            reward: resp.vantagemNome ?? "—",
+            time: formatarData(resp.dataResgate),
+          },
+          ...prev,
+        ].slice(0, 5),
+      );
+    } catch (err: any) {
+      setValidatedCoupon(null);
+      setErro(err?.message || "Cupom inválido");
+    } finally {
+      setCarregando(false);
     }
   };
 
   const handleConfirmValidation = () => {
-    alert("Cupom validado com sucesso!");
     setValidatedCoupon(null);
     setCouponCode("");
+    setErro(null);
   };
 
   return (
     <div className="flex-1 p-6">
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-      >
-        <h1 className="text-3xl mb-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+        <h1
+          className="text-3xl mb-2"
+          style={{ fontFamily: "'Architects Daughter', cursive" }}
+        >
           validação de cupons
         </h1>
-        <p className="text-sm text-gray-600 italic mb-6" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+        <p
+          className="text-sm text-gray-600 italic mb-6"
+          style={{ fontFamily: "'Architects Daughter', cursive" }}
+        >
           o aluno apresenta o código · você valida na hora
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Validation Area */}
           <div className="lg:col-span-2">
-            <p className="text-xs text-red-500 mb-4 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-              feedback claro → cupom inválido nunca validado
-            </p>
-
             <SketchCard>
               <div className="p-6">
-                <h3 className="text-lg mb-4 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                <h3
+                  className="text-lg mb-4 italic"
+                  style={{ fontFamily: "'Architects Daughter', cursive" }}
+                >
                   código do cupom
                 </h3>
 
                 <input
                   type="text"
                   value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase());
+                    setErro(null);
+                  }}
                   placeholder="A8F2-7K9P"
-                  className="w-full text-center text-4xl py-6 px-4 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B] mb-6 tracking-wider"
-                  style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Courier New', monospace", fontWeight: "bold" }}
-                  maxLength={9}
+                  className="w-full text-center text-4xl py-6 px-4 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B] mb-4 tracking-wider"
+                  style={{
+                    borderRadius: "8px 12px 6px 10px",
+                    fontFamily: "'Courier New', monospace",
+                    fontWeight: "bold",
+                  }}
+                  maxLength={12}
                 />
+
+                {erro && (
+                  <div
+                    className="bg-red-100 border-[2px] border-red-400 text-red-700 px-3 py-2 text-sm mb-4"
+                    style={{
+                      borderRadius: "6px 8px 5px 7px",
+                      fontFamily: "'Architects Daughter', cursive",
+                    }}
+                  >
+                    ⚠ {erro}
+                  </div>
+                )}
 
                 <SketchButton
                   variant="primary"
                   className="w-full text-lg py-4"
                   onClick={handleValidate}
-                  disabled={couponCode.length < 9}
+                  disabled={!couponCode.trim() || carregando}
                 >
-                  validar cupom
+                  {carregando ? "validando..." : "validar cupom"}
                 </SketchButton>
               </div>
             </SketchCard>
@@ -101,45 +150,70 @@ export function CouponValidation() {
                           <SketchBadge variant="gold" className="mb-2">
                             ✓ CUPOM VÁLIDO
                           </SketchBadge>
-                          <p className="text-xs text-gray-600" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                            {validatedCoupon.date}
+                          <p
+                            className="text-xs text-gray-600"
+                            style={{ fontFamily: "'Architects Daughter', cursive" }}
+                          >
+                            {formatarData(validatedCoupon.dataResgate)}
                           </p>
                         </div>
+                        <SketchBadge variant="gold" className="text-xs">
+                          {validatedCoupon.status}
+                        </SketchBadge>
                       </div>
 
-                      <div className="bg-white p-4 border-[2px] border-black mb-4"
-                           style={{ borderRadius: "6px 8px 5px 7px" }}>
+                      <div
+                        className="bg-white p-4 border-[2px] border-black mb-4"
+                        style={{ borderRadius: "6px 8px 5px 7px" }}
+                      >
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 bg-[#F5F2E9] border-[2px] border-black rounded-full flex items-center justify-center"
-                               style={{ borderRadius: "50% 45% 48% 52%", fontFamily: "'Architects Daughter', cursive" }}>
-                            M
+                          <div
+                            className="w-12 h-12 bg-[#F5F2E9] border-[2px] border-black flex items-center justify-center"
+                            style={{
+                              borderRadius: "50% 45% 48% 52%",
+                              fontFamily: "'Architects Daughter', cursive",
+                            }}
+                          >
+                            {(validatedCoupon.alunoNome ?? "?").charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                              {validatedCoupon.student}
+                            <p
+                              className="font-medium"
+                              style={{ fontFamily: "'Architects Daughter', cursive" }}
+                            >
+                              {validatedCoupon.alunoNome ?? "—"}
                             </p>
-                            <p className="text-xs text-gray-600" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                              {validatedCoupon.enrollment} · {validatedCoupon.course}
+                            <p
+                              className="text-xs text-gray-600 font-mono"
+                              style={{ fontFamily: "'Courier New', monospace" }}
+                            >
+                              {validatedCoupon.codigoCupom}
                             </p>
                           </div>
                         </div>
 
                         <div className="border-t-2 border-dashed border-gray-300 pt-3">
-                          <p className="text-sm font-medium mb-1" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                          <p
+                            className="text-sm font-medium mb-1"
+                            style={{ fontFamily: "'Architects Daughter', cursive" }}
+                          >
                             VANTAGEM
                           </p>
-                          <p className="text-lg" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                            {validatedCoupon.reward}
+                          <p
+                            className="text-lg"
+                            style={{ fontFamily: "'Architects Daughter', cursive" }}
+                          >
+                            {validatedCoupon.vantagemNome ?? "—"}
                           </p>
-                          <p className="text-xs text-gray-600 mt-1" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                            {validatedCoupon.cost}💰 · resgatado em {validatedCoupon.date.split(' - ')[0]}
+                          <p
+                            className="text-xs text-gray-600 mt-1"
+                            style={{ fontFamily: "'Architects Daughter', cursive" }}
+                          >
+                            {validatedCoupon.custoMoedas}💰 · resgatado em{" "}
+                            {formatarData(validatedCoupon.dataResgate)}
                           </p>
                         </div>
                       </div>
-
-                      <p className="text-xs text-gray-700 mb-4 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                        baixa registrada · cupom invalidado nesta validação
-                      </p>
 
                       <div className="flex gap-3">
                         <SketchButton
@@ -150,7 +224,7 @@ export function CouponValidation() {
                             setCouponCode("");
                           }}
                         >
-                          imprimir recibo
+                          fechar
                         </SketchButton>
                         <SketchButton
                           variant="primary"
@@ -169,29 +243,50 @@ export function CouponValidation() {
 
           {/* Recent Validations Sidebar */}
           <div className="lg:col-span-1">
-            <h3 className="text-xl mb-4" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+            <h3
+              className="text-xl mb-4"
+              style={{ fontFamily: "'Architects Daughter', cursive" }}
+            >
               validações recentes
             </h3>
 
             <SketchCard className="p-4">
+              {recentes.length === 0 && (
+                <p
+                  className="text-xs text-gray-500 italic text-center py-4"
+                  style={{ fontFamily: "'Architects Daughter', cursive" }}
+                >
+                  nenhuma validação ainda
+                </p>
+              )}
+
               <div className="space-y-3">
-                {recentValidations.map((validation, index) => (
+                {recentes.map((validation, index) => (
                   <motion.div
-                    key={validation.id}
+                    key={`${validation.code}-${index}`}
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: index * 0.05 }}
                     className="pb-3 border-b border-gray-200 last:border-0"
                   >
                     <div className="flex items-start justify-between mb-1">
-                      <p className="font-mono text-sm font-bold" style={{ fontFamily: "'Courier New', monospace" }}>
+                      <p
+                        className="font-mono text-sm font-bold"
+                        style={{ fontFamily: "'Courier New', monospace" }}
+                      >
                         {validation.code}
                       </p>
-                      <p className="text-xs text-gray-500" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                      <p
+                        className="text-xs text-gray-500"
+                        style={{ fontFamily: "'Architects Daughter', cursive" }}
+                      >
                         {validation.time}
                       </p>
                     </div>
-                    <p className="text-xs text-gray-700" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                    <p
+                      className="text-xs text-gray-700"
+                      style={{ fontFamily: "'Architects Daughter', cursive" }}
+                    >
                       {validation.student} · {validation.reward}
                     </p>
                   </motion.div>

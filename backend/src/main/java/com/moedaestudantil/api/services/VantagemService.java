@@ -7,6 +7,7 @@ import com.moedaestudantil.api.entities.Vantagem;
 import com.moedaestudantil.api.repositories.InstituicaoRepository;
 import com.moedaestudantil.api.repositories.VantagemRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,7 +38,7 @@ public class VantagemService {
     }
 
     public List<VantagemResponseDTO> listar() {
-        return vantagemRepository.findAll()
+        return vantagemRepository.findAll(Sort.by("custoMoedas").ascending())
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());

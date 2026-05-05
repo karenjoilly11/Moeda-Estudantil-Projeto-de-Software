@@ -1,0 +1,23 @@
+# Claude Code (configurações locais do agente)
+.claude/
+CLAUDE.md
+
+# Materiais locais (wireframes, design canvas, uploads)
+claude/
+
+# Build outputs
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
