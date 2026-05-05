@@ -1,0 +1,16 @@
+# Claude Code / AI tooling
+.claude/
+CLAUDE.md
+.mcp/
+mcp.json
+.mcp.json
+claude/
+claude
+.claude
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
