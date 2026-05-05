@@ -1,5 +1,6 @@
 package com.moedaestudantil.api.entities;
 
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,4 +20,7 @@ public class Professor extends Usuario {
     
     @Column(nullable = false)
     private Double saldoMoedas = 1000.0; // 1000 moedas por semestre
+
+     @Column(name = "ultimo_semestre_creditado")
+    private LocalDateTime ultimoSemestreCreditado;
 }
