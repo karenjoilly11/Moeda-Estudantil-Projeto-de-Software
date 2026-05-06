@@ -10,6 +10,7 @@ import {
   SketchListSkeleton 
 } from "./SketchSkeleton";
 import { motion, AnimatePresence } from "motion/react";
+<<<<<<< HEAD
 import { alunoService } from "@/services/alunoService";
 import { transacaoService } from "@/services/transacaoService";
 import { useConfetti } from "@/hooks/useConfetti";
@@ -19,6 +20,12 @@ import type {
   Vantagem,
   ResgateResponse,
 } from "@/types/api";
+=======
+import { alunoService } from "../../services/alunoService";
+import { transacaoService } from "../../services/transacaoService";
+import type { Aluno, Transacao, Vantagem, ResgateResponse } from "../../types/api";
+
+>>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
 
 interface StudentDashboardProps {
   aluno: Aluno;
@@ -164,7 +171,27 @@ export function StudentDashboard({ aluno, onLogout, onSaldoUpdate }: StudentDash
         onLogout={handleLogout}
       />
 
+<<<<<<< HEAD
       <div className="max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+=======
+          <div className="flex items-center gap-4">
+            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Notificações">
+              <Bell size={20} />
+            </button>
+            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Perfil" title={aluno.email}>
+              <User size={20} />
+            </button>
+            {onLogout && (
+              <SketchButton variant="outline" className="text-xs px-3 py-2" onClick={onLogout}>
+                sair
+              </SketchButton>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+>>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
         {/* Main Content */}
         <div className="lg:col-span-2">
           {/* Greeting Card */}

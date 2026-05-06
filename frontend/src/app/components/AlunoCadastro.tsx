@@ -1,0 +1,206 @@
+import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { SketchCard } from "./SketchCard";
+import { SketchButton } from "./SketchButton";
+import { SketchInput } from "./SketchInput";
+import { alunoService } from "../../services/alunoService";
+import type { Aluno } from "../../types/api";
+import { api } from "../../lib/api";
+
+interface Instituicao {
+  id: number;
+  nome: string;
+  endereco: string;
+  telefone: string;
+}
+
+interface AlunoCadastroProps {
+  onCadastroSuccess: (aluno: Aluno) => void;
+  onCancel: () => void;
+}
+
+export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProps) {
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [rg, setRg] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
+  const [instituicaoId, setInstituicaoId] = useState("");
+  const [curso, setCurso] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [erro, setErro] = useState<string | null>(null);
+  const [carregando, setCarregando] = useState(false);
+
+  
+
+  useEffect(() => {
+    const carregarInstituicoes = async () => {
+      try {
+        const instituicoesData = await api.get<Instituicao[]>('/instituicoes');
+        console.log('Instituições carregadas:', instituicoesData);
+        setInstituicoes(instituicoesData);
+      } catch (err) {
+        console.error('Erro ao carregar instituições', err);
+      }
+    };
+    carregarInstituicoes();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro(null);
+
+    if (senha !== confirmarSenha) {
+      setErro("As senhas não coincidem");
+      return;
+    }
+
+    setCarregando(true);
+    try {
+      const aluno = await alunoService.cadastrar({
+        nome,
+        email,
+        cpf,
+        rg,
+        endereco,
+        curso,
+        senha,
+        instituicaoId: Number(instituicaoId)
+      });
+      onCadastroSuccess(aluno);
+    } catch (err: any) {
+      setErro(err?.message || "Falha no cadastro");
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  
+
+  return (
+    <div className="min-h-screen bg-[#F5F2E9] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="w-full max-w-md"
+      >
+        <SketchCard>
+          <div className="p-2">
+            <div className="flex items-center gap-3 mb-6">
+              <div
+                className="w-12 h-12 bg-[#F2D06B] border-[2.5px] border-black flex items-center justify-center text-2xl"
+                style={{ borderRadius: "50% 45% 48% 52%" }}
+              >
+                📝
+              </div>
+              <div>
+                <h1
+                  className="text-2xl"
+                  style={{ fontFamily: "'Architects Daughter', cursive" }}
+                >
+                  cadastro de aluno
+                </h1>
+                <p
+                  className="text-xs text-gray-600 italic"
+                  style={{ fontFamily: "'Architects Daughter', cursive" }}
+                >
+                  preencha seus dados para começar
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <SketchInput
+                label="nome completo"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                required
+              />
+              <SketchInput
+                label="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <SketchInput
+                label="CPF"
+                value={cpf}
+                onChange={(e) => setCpf(e.target.value)}
+                placeholder="123.456.789-00"
+                required
+              />
+              <SketchInput
+                label="RG"
+                value={rg}
+                onChange={(e) => setRg(e.target.value)}
+                required
+              />
+              <SketchInput
+                label="endereço"
+                value={endereco}
+                onChange={(e) => setEndereco(e.target.value)}
+                required
+              />
+
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">instituição de ensino *</label>
+                <select
+                  value={instituicaoId}
+                  onChange={(e) => setInstituicaoId(e.target.value)}
+                  required
+                  aria-label="Seleção de instituição de ensino"
+                  className="w-full p-3 border-2 border-black rounded-lg bg-white"
+                  style={{ fontFamily: "'Architects Daughter', cursive" }}
+                >
+                  <option value="">Selecione sua instituição</option>
+                  {instituicoes.map((inst) => (
+                    <option key={inst.id} value={inst.id}>{inst.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <SketchInput
+                label="curso"
+                value={curso}
+                onChange={(e) => setCurso(e.target.value)}
+                required
+              />
+              <SketchInput
+                label="senha"
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                required
+              />
+              <SketchInput
+                label="confirmar senha"
+                type="password"
+                value={confirmarSenha}
+                onChange={(e) => setConfirmarSenha(e.target.value)}
+                required
+              />
+
+              {erro && (
+                <div className="bg-red-100 border-2 border-red-400 text-red-700 px-3 py-2 text-sm rounded-lg">
+                  ⚠ {erro}
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-2">
+                <SketchButton variant="outline" type="button" className="flex-1" onClick={onCancel}>
+                  voltar
+                </SketchButton>
+                <SketchButton variant="primary" type="submit" className="flex-1" disabled={carregando}>
+                  {carregando ? "cadastrando..." : "cadastrar →"}
+                </SketchButton>
+              </div>
+            </form>
+          </div>
+        </SketchCard>
+      </motion.div>
+    </div>
+  );
+}

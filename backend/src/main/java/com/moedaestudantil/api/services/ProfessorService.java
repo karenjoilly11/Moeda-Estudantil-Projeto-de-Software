@@ -8,7 +8,6 @@ import com.moedaestudantil.api.entities.Aluno;
 import com.moedaestudantil.api.entities.Professor;
 import com.moedaestudantil.api.entities.Transacao;
 import com.moedaestudantil.api.enums.TipoTransacao;
-import com.moedaestudantil.api.enums.TipoUsuario;
 import com.moedaestudantil.api.repositories.AlunoRepository;
 import com.moedaestudantil.api.repositories.ProfessorRepository;
 import com.moedaestudantil.api.repositories.TransacaoRepository;

@@ -134,10 +134,10 @@ export function ProfessorClassView({ professor, onLogout }: ProfessorClassViewPr
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors">
+            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Notificações">
               <Bell size={20} />
             </button>
-            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors">
+            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Perfil">
               <User size={20} />
             </button>
             {onLogout && (

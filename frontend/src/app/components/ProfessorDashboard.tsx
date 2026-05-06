@@ -162,7 +162,22 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
         onLogout={onLogout}
       />
 
+<<<<<<< HEAD
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
+=======
+          <div className="flex items-center gap-4">
+            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Notificações">
+              <Bell size={20} />
+            </button>
+            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Perfil">
+              <User size={20} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto p-6">
+>>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
         {/* Greeting */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -351,6 +366,7 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
                       <Coins className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-[#F2D06B]" size={20} />
                       <input
                         type="number"
+                        aria-label="quantidade de moedas"
                         value={amount}
                         onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
                         className="w-full text-center text-2xl sm:text-3xl py-3 pl-10 sm:pl-12 pr-4 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
@@ -371,6 +387,7 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
                     {quickAmounts.map(value => (
                       <button
                         key={value}
+                        aria-label={`definir ${value} moedas`}
                         onClick={() => setAmount(value)}
                         className={`px-3 sm:px-4 py-2 border-[2.5px] border-black transition-all text-sm sm:text-base ${
                           amount === value
@@ -394,7 +411,12 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
+<<<<<<< HEAD
                     placeholder="excelente apresentacao no seminario - clareza e dominio do tema!"
+=======
+                    aria-label="Motivo do envio"
+                    placeholder="excelente apresentação no seminário — clareza e domínio do tema!"
+>>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
                     rows={3}
                     className="w-full px-4 py-3 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B] resize-none"
                     style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
