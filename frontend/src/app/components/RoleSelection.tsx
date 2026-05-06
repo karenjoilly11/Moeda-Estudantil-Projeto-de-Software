@@ -1,29 +1,36 @@
 import { GraduationCap, Pencil, Building2 } from "lucide-react";
 import { SketchCard } from "./SketchCard";
 import { motion } from "motion/react";
+import type { UserRole } from "@/types/api";
 
 interface RoleSelectionProps {
-  onSelectRole: (role: "student" | "professor" | "company") => void;
+  onSelectRole: (role: UserRole) => void;
 }
 
 export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
-  const roles = [
+  const roles: Array<{
+    id: UserRole;
+    title: string;
+    subtitle: string;
+    icon: typeof GraduationCap;
+    color: string;
+  }> = [
     {
-      id: "student" as const,
+      id: "aluno",
       title: "Aluno",
       subtitle: "recebo moedas\ne troco vantagens",
       icon: GraduationCap,
       color: "#F2D06B"
     },
     {
-      id: "professor" as const,
+      id: "professor",
       title: "Professor",
       subtitle: "distribuo moedas\npor reconhecimento",
       icon: Pencil,
       color: "#1A1A1A"
     },
     {
-      id: "company" as const,
+      id: "empresa",
       title: "Empresa",
       subtitle: "ofereço vantagens\npara estudantes",
       icon: Building2,
@@ -41,7 +48,7 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="w-12 h-12 bg-[#F2D06B] border-[2.5px] border-black rounded-full flex items-center justify-center"
                style={{ borderRadius: "50% 45% 48% 52%" }}>
-            <span className="text-2xl">💰</span>
+            <span className="text-2xl">$</span>
           </div>
           <h1 className="text-4xl md:text-5xl" style={{ fontFamily: "'Architects Daughter', cursive" }}>
             Moeda Estudantil
@@ -51,7 +58,7 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
           Quem é você?
         </p>
         <p className="text-sm text-gray-600 mt-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-          Selecione seu perfil para continuar — o formulário se adapta ao seu tipo de conta.
+          Selecione seu perfil para continuar
         </p>
       </motion.div>
 
@@ -91,10 +98,6 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
           );
         })}
       </div>
-
-      <p className="mt-12 text-sm text-gray-600" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-        já tenho conta? <button className="underline font-medium">entrar</button>
-      </p>
     </div>
   );
 }

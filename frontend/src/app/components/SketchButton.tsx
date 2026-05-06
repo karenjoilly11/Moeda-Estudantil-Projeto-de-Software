@@ -6,7 +6,7 @@ interface SketchButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-export function SketchButton({ variant = "primary", children, className = "", ...props }: SketchButtonProps) {
+export function SketchButton({ variant = "primary", children, className = "", disabled, ...props }: SketchButtonProps) {
   const baseClasses = "px-6 py-3 font-medium transition-all duration-150 relative";
 
   const variantClasses = {
@@ -15,14 +15,28 @@ export function SketchButton({ variant = "primary", children, className = "", ..
     ghost: "bg-transparent text-[#1A1A1A] border-[2.5px] border-transparent hover:border-black"
   };
 
+  const disabledClasses = disabled 
+    ? "opacity-50 cursor-not-allowed hover:shadow-[5px_5px_0px_#000000] active:shadow-[5px_5px_0px_#000000] active:translate-x-0 active:translate-y-0" 
+    : "";
+
   return (
     <motion.button
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      className={`${baseClasses} ${variantClasses[variant]} ${disabledClasses} ${className}`}
       style={{
         borderRadius: "8px 12px 6px 10px",
         fontFamily: "'Architects Daughter', cursive"
       }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={!disabled ? { 
+        scale: 1.02,
+        rotateZ: 0.5,
+        transition: { duration: 0.15 }
+      } : undefined}
+      whileTap={!disabled ? { 
+        scale: 0.95,
+        rotateZ: -0.5,
+        transition: { duration: 0.1 }
+      } : undefined}
+      disabled={disabled}
       {...props}
     >
       {children}

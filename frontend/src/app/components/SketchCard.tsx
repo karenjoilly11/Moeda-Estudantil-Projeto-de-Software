@@ -19,14 +19,19 @@ export function SketchCard({ children, className = "", hoverable = false, onClic
         boxShadow: "5px 5px 0px #000000"
       }}
       whileHover={hoverable ? {
-        y: -4,
-        boxShadow: "7px 7px 0px #000000",
-        transition: { duration: 0.2 }
-      } : {}}
+        y: -6,
+        x: -2,
+        rotateZ: 0.5,
+        boxShadow: "9px 9px 0px #000000",
+        transition: { duration: 0.2, ease: "easeOut" }
+      } : undefined}
       whileTap={onClick ? {
         y: 2,
-        boxShadow: "3px 3px 0px #000000"
-      } : {}}
+        x: 2,
+        scale: 0.98,
+        boxShadow: "2px 2px 0px #000000",
+        transition: { duration: 0.1 }
+      } : undefined}
       onClick={onClick}
     >
       {children}

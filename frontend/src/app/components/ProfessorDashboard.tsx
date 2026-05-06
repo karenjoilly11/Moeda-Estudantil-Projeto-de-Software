@@ -1,116 +1,199 @@
-import { useState } from "react";
-import { Bell, User, Search, Coins, ArrowRight } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, Coins, RefreshCw } from "lucide-react";
 import { SketchCard } from "./SketchCard";
+import { Sketch3DCardGlow } from "./Sketch3DCard";
 import { SketchButton } from "./SketchButton";
 import { SketchBadge } from "./SketchBadge";
-import { SketchInput } from "./SketchInput";
+import { SketchListSkeleton } from "./SketchSkeleton";
+import { Navbar } from "./Navbar";
 import { motion } from "motion/react";
+import { professorService } from "@/services/professorService";
+import { useProfessor } from "@/contexts/AuthContext";
+import { useConfetti } from "@/hooks/useConfetti";
+import type { Professor, AlunoResumo, Transacao } from "@/types/api";
 
 interface ProfessorDashboardProps {
-  professorName: string;
+  professor: Professor;
+  onLogout: () => void;
 }
 
-export function ProfessorDashboard({ professorName }: ProfessorDashboardProps) {
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+export function ProfessorDashboard({ professor: initialProfessor, onLogout }: ProfessorDashboardProps) {
+  const { updateProfessor } = useProfessor();
+  const { fireGoldCoins, fireSuccess } = useConfetti();
+  
+  // Estado local do professor (pode ser atualizado apos envio de moedas)
+  const [professor, setProfessor] = useState<Professor>(initialProfessor);
+  
+  // Estados de dados
+  const [students, setStudents] = useState<AlunoResumo[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<Transacao[]>([]);
+  
+  // Estados de loading
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [sendingCoins, setSendingCoins] = useState(false);
+  
+  // Estados do formulario
+  const [selectedStudent, setSelectedStudent] = useState<AlunoResumo | null>(null);
   const [amount, setAmount] = useState<number>(20);
   const [reason, setReason] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const semesterBalance = 685;
-  const distributed = 315;
-  const remaining = semesterBalance - distributed;
-
-  const students = [
-    { id: 1, name: "Marina Souza", enrollment: "2024.1234", course: "engenharia da computação - 6º", avatar: "M" },
-    { id: 2, name: "Marcos Rocha", enrollment: "2023.6789", course: "eng. comp.", avatar: "M" },
-    { id: 3, name: "Maria Santos", enrollment: "2024.9801", course: "eng. comp.", avatar: "M" }
-  ];
-
-  const recentTransactions = [
-    { id: 1, student: "Marina Souza", amount: 20, date: "2024.1234", reason: "excelente apresentação no seminário", time: "hoje - 14:23" },
-    { id: 2, student: "Bruno Lima", amount: 15, date: "2023.8921", reason: "ajudou colegas na laboratório", time: "hoje - 11:05" },
-    { id: 3, student: "Carla Ruz", amount: 30, date: "2024.4967", reason: "solução única entrega de prazo", time: "ontem - 16:45" },
-    { id: 4, student: "Diego Alves", amount: 10, date: "2022.9123", reason: "perguntas perspicazes em aula", time: "23/abr - 10:11" },
-    { id: 5, student: "Eva Pinto", amount: 25, date: "2024.7712", reason: "liderança trabalho em grupo", time: "20/abr - 15:22" }
-  ];
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const quickAmounts = [5, 10, 20, 30, 50];
 
-  const filteredStudents = searchQuery
-    ? students.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.enrollment.includes(searchQuery))
-    : students;
+  // Carregar historico de transacoes
+  const loadHistory = useCallback(async () => {
+    setLoadingHistory(true);
+    try {
+      const history = await professorService.listarHistorico(professor.id);
+      setRecentTransactions(history.slice(0, 5)); // Ultimas 5
+    } catch (err) {
+      // Mantem dados vazios como fallback
+      setRecentTransactions([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [professor.id]);
 
-  const handleSend = () => {
-    if (selectedStudent && amount > 0 && reason.trim()) {
-      alert(`Enviando ${amount} moedas para ${selectedStudent.name}!`);
+  // Buscar alunos
+  const searchStudents = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setStudents([]);
+      return;
+    }
+    
+    setLoadingStudents(true);
+    try {
+      const results = await professorService.buscarAlunos(professor.id, query);
+      setStudents(results);
+    } catch (err) {
+      // Fallback: dados mockados para demo
+      setStudents([
+        { id: 1, nome: "Marina Souza", email: "marina@puc.br", curso: "Eng. Computacao" },
+        { id: 2, nome: "Marcos Rocha", email: "marcos@puc.br", curso: "Eng. Computacao" },
+      ].filter(s => s.nome.toLowerCase().includes(query.toLowerCase())));
+    } finally {
+      setLoadingStudents(false);
+    }
+  }, [professor.id]);
+
+  // Debounce da busca
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchStudents(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchStudents]);
+
+  // Carregar historico inicial
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  // Enviar moedas
+  const handleSend = async () => {
+    if (!selectedStudent || amount <= 0 || !reason.trim()) return;
+    
+    setError(null);
+    setSuccessMessage(null);
+    setSendingCoins(true);
+    
+    try {
+      const response = await professorService.enviarMoedas({
+        professorId: professor.id,
+        alunoId: selectedStudent.id,
+        quantidade: amount,
+        mensagem: reason
+      });
+      
+      // Atualizar saldo do professor
+      const novoSaldo = response.saldoRestanteProfessor;
+      const professorAtualizado = { ...professor, saldoMoedas: novoSaldo };
+      setProfessor(professorAtualizado);
+      updateProfessor(professorAtualizado);
+      
+      // Mostrar sucesso
+      setSuccessMessage(`${amount} moedas enviadas para ${selectedStudent.nome.split(' ')[0]}!`);
+      
+      // Dispara confete
+      fireGoldCoins();
+      
+      // Limpar formulario
       setSelectedStudent(null);
       setAmount(20);
       setReason("");
       setSearchQuery("");
+      
+      // Recarregar historico
+      loadHistory();
+      
+      // Limpar mensagem de sucesso apos 3s
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      setError(err?.message || "Erro ao enviar moedas. Tente novamente.");
+    } finally {
+      setSendingCoins(false);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) return `hoje - ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      if (diffDays === 1) return `ontem - ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    } catch {
+      return dateStr;
     }
   };
 
   return (
     <div className="min-h-screen bg-[#F5F2E9]">
-      {/* Header */}
-      <header className="bg-white border-b-[2.5px] border-black p-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#F2D06B] border-[2.5px] border-black rounded-full flex items-center justify-center"
-                 style={{ borderRadius: "50% 45% 48% 52%" }}>
-              <span className="text-xl">💰</span>
-            </div>
-            <span className="text-xl" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-              Moeda Estudantil · <span className="text-sm italic">professor</span>
-            </span>
-          </div>
+      {/* Navbar Dinamica */}
+      <Navbar 
+        role="professor"
+        userName={professor.nome}
+        userEmail={professor.email}
+        onLogout={onLogout}
+      />
 
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors">
-              <Bell size={20} />
-            </button>
-            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors">
-              <User size={20} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6">
         {/* Greeting */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="mb-6"
         >
-          <h1 className="text-3xl mb-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-            Olá, Prof. {professorName} 👋
+          <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+            Ola, Prof. {professor.nome.split(' ')[0]}
           </h1>
           <p className="text-sm text-gray-600 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-            reconheça o esforço dos seus alunos com moedas
+            reconheca o esforco dos seus alunos com moedas
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main - Nova Distribuição */}
+          {/* Main - Nova Distribuicao */}
           <div className="lg:col-span-2">
-            <h2 className="text-2xl mb-4" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-              nova distribuição
+            <h2 className="text-xl sm:text-2xl mb-4" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+              nova distribuicao
             </h2>
-            <p className="text-xs text-red-500 mb-4 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-              uma tarefa, um foco
-            </p>
 
-            <SketchCard>
-              <div className="p-6">
+            <Sketch3DCardGlow glowColor="#1A1A1A" intensity={0.5}>
+              <div className="p-2 sm:p-4">
                 {/* Balance Progress */}
                 <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
                     <span className="text-sm italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                      saldo semestre · 2026.1
+                      saldo semestre - 2026.1
                     </span>
                     <SketchBadge variant="gold" icon>
-                      {remaining} / {semesterBalance} disponível
+                      {professor.saldoMoedas} disponiveis
                     </SketchBadge>
                   </div>
 
@@ -119,37 +202,64 @@ export function ProfessorDashboard({ professorName }: ProfessorDashboardProps) {
                        style={{ borderRadius: "6px 8px 5px 7px" }}>
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${(distributed / semesterBalance) * 100}%` }}
+                      animate={{ width: `${Math.min(100, (professor.saldoMoedas / 1000) * 100)}%` }}
                       transition={{ duration: 1, ease: "easeOut" }}
-                      className="h-full bg-[#1A1A1A]"
+                      className="h-full bg-[#F2D06B]"
                     />
                   </div>
-
-                  <p className="text-xs text-gray-600 mt-2 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    já distribuiu {distributed} moedas · acaba dia 31/jul
-                  </p>
                 </div>
+
+                {/* Success message */}
+                {successMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="mb-4 bg-green-100 border-[2px] border-green-400 text-green-700 px-4 py-3 text-sm"
+                    style={{
+                      borderRadius: "6px 8px 5px 7px",
+                      fontFamily: "'Architects Daughter', cursive",
+                    }}
+                  >
+                    {successMessage}
+                  </motion.div>
+                )}
+
+                {/* Error message */}
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 bg-red-100 border-[2px] border-red-400 text-red-700 px-3 py-2 text-sm"
+                    style={{
+                      borderRadius: "6px 8px 5px 7px",
+                      fontFamily: "'Architects Daughter', cursive",
+                    }}
+                  >
+                    ! {error}
+                  </motion.div>
+                )}
 
                 {/* Step 1: Para Quem */}
                 <div className="mb-6">
-                  <h3 className="text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    1 · PARA QUEM?
+                  <h3 className="text-base sm:text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                    1 - PARA QUEM?
                   </h3>
 
                   {selectedStudent ? (
                     <SketchCard className="p-4 bg-[#F2D06B]/20">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-white border-[2px] border-black rounded-full flex items-center justify-center"
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2px] border-black rounded-full flex items-center justify-center"
                                style={{ borderRadius: "50% 45% 48% 52%", fontFamily: "'Architects Daughter', cursive" }}>
-                            {selectedStudent.avatar}
+                            {selectedStudent.nome.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-medium" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                              {selectedStudent.name}
+                            <p className="font-medium text-sm sm:text-base" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                              {selectedStudent.nome}
                             </p>
                             <p className="text-xs text-gray-600" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                              {selectedStudent.enrollment} · {selectedStudent.course}
+                              {selectedStudent.curso}
                             </p>
                           </div>
                         </div>
@@ -168,7 +278,7 @@ export function ProfessorDashboard({ professorName }: ProfessorDashboardProps) {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                         <input
                           type="text"
-                          placeholder="🔍 digite nome ou matrícula..."
+                          placeholder="digite nome ou email..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="w-full pl-10 pr-4 py-3 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
@@ -176,26 +286,35 @@ export function ProfessorDashboard({ professorName }: ProfessorDashboardProps) {
                         />
                       </div>
 
-                      {searchQuery && (
+                      {loadingStudents && (
+                        <div className="border-[2.5px] border-black bg-white p-4" style={{ borderRadius: "6px 8px 5px 7px" }}>
+                          <SketchListSkeleton count={2} />
+                        </div>
+                      )}
+
+                      {!loadingStudents && searchQuery && students.length > 0 && (
                         <div className="border-[2.5px] border-black bg-white"
                              style={{ borderRadius: "6px 8px 5px 7px" }}>
-                          {filteredStudents.map((student) => (
+                          {students.map((student) => (
                             <button
                               key={student.id}
-                              onClick={() => setSelectedStudent(student)}
+                              onClick={() => {
+                                setSelectedStudent(student);
+                                setSearchQuery("");
+                              }}
                               className="w-full p-3 hover:bg-[#F5F2E9] text-left border-b border-gray-200 last:border-0 transition-colors"
                             >
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-[#F5F2E9] border-[2px] border-black rounded-full flex items-center justify-center flex-shrink-0"
                                      style={{ borderRadius: "50% 45% 48% 52%", fontFamily: "'Architects Daughter', cursive" }}>
-                                  {student.avatar}
+                                  {student.nome.charAt(0)}
                                 </div>
-                                <div className="flex-1">
-                                  <p className="font-medium text-sm" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                                    {student.name}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                                    {student.nome}
                                   </p>
-                                  <p className="text-xs text-gray-600" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                                    {student.enrollment} · {student.course}
+                                  <p className="text-xs text-gray-600 truncate" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                                    {student.email} - {student.curso}
                                   </p>
                                 </div>
                               </div>
@@ -203,53 +322,57 @@ export function ProfessorDashboard({ professorName }: ProfessorDashboardProps) {
                           ))}
                         </div>
                       )}
+
+                      {!loadingStudents && searchQuery && students.length === 0 && (
+                        <p className="text-sm text-gray-500 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                          nenhum aluno encontrado
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
 
                 {/* Step 2: Quantas Moedas */}
                 <div className="mb-6">
-                  <h3 className="text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    2 · QUANTAS MOEDAS?
+                  <h3 className="text-base sm:text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                    2 - QUANTAS MOEDAS?
                   </h3>
 
-                  {/* Amount Input with +/- */}
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3">
                     <button
                       onClick={() => setAmount(Math.max(5, amount - 5))}
-                      className="w-12 h-12 bg-white border-[2.5px] border-black flex items-center justify-center hover:bg-[#F5F2E9] transition-colors"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2.5px] border-black flex items-center justify-center hover:bg-[#F5F2E9] transition-colors"
                       style={{ borderRadius: "6px 8px 5px 7px" }}
                     >
-                      <span className="text-2xl leading-none">−</span>
+                      <span className="text-xl sm:text-2xl leading-none">-</span>
                     </button>
 
                     <div className="flex-1 relative">
-                      <Coins className="absolute left-4 top-1/2 -translate-y-1/2 text-[#F2D06B]" size={24} />
+                      <Coins className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-[#F2D06B]" size={20} />
                       <input
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-full text-center text-3xl py-3 pl-12 pr-4 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
+                        className="w-full text-center text-2xl sm:text-3xl py-3 pl-10 sm:pl-12 pr-4 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
                         style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
                       />
                     </div>
 
                     <button
                       onClick={() => setAmount(amount + 5)}
-                      className="w-12 h-12 bg-white border-[2.5px] border-black flex items-center justify-center hover:bg-[#F5F2E9] transition-colors"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2.5px] border-black flex items-center justify-center hover:bg-[#F5F2E9] transition-colors"
                       style={{ borderRadius: "6px 8px 5px 7px" }}
                     >
-                      <span className="text-2xl leading-none">+</span>
+                      <span className="text-xl sm:text-2xl leading-none">+</span>
                     </button>
                   </div>
 
-                  {/* Quick Amounts */}
                   <div className="flex gap-2 flex-wrap">
                     {quickAmounts.map(value => (
                       <button
                         key={value}
                         onClick={() => setAmount(value)}
-                        className={`px-4 py-2 border-[2.5px] border-black transition-all ${
+                        className={`px-3 sm:px-4 py-2 border-[2.5px] border-black transition-all text-sm sm:text-base ${
                           amount === value
                             ? 'bg-[#1A1A1A] text-white'
                             : 'bg-white text-[#1A1A1A] hover:bg-[#F2D06B]'
@@ -262,16 +385,16 @@ export function ProfessorDashboard({ professorName }: ProfessorDashboardProps) {
                   </div>
                 </div>
 
-                {/* Step 3: Por Quê */}
+                {/* Step 3: Por Que */}
                 <div className="mb-6">
-                  <h3 className="text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    3 · POR QUÊ? <span className="text-xs">(obrigatório)</span>
+                  <h3 className="text-base sm:text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                    3 - POR QUE? <span className="text-xs">(obrigatorio)</span>
                   </h3>
 
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder="excelente apresentação no seminário — clareza e domínio do tema!"
+                    placeholder="excelente apresentacao no seminario - clareza e dominio do tema!"
                     rows={3}
                     className="w-full px-4 py-3 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B] resize-none"
                     style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
@@ -281,66 +404,81 @@ export function ProfessorDashboard({ professorName }: ProfessorDashboardProps) {
                 {/* Submit Button */}
                 <SketchButton
                   variant="primary"
-                  className="w-full text-lg py-4"
+                  className="w-full text-base sm:text-lg py-4"
                   onClick={handleSend}
-                  disabled={!selectedStudent || amount === 0 || !reason.trim()}
+                  disabled={!selectedStudent || amount === 0 || !reason.trim() || sendingCoins || amount > professor.saldoMoedas}
                 >
-                  enviar moedas para {selectedStudent?.name.split(' ')[0] || '...'} →
+                  {sendingCoins ? "enviando..." : `enviar moedas para ${selectedStudent?.nome.split(' ')[0] || '...'}`}
                 </SketchButton>
 
-                <p className="text-xs text-center text-gray-500 mt-3" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                  vão sobrar {selectedStudent ? remaining - amount : remaining} moedas
-                </p>
+                {amount > professor.saldoMoedas && (
+                  <p className="text-xs text-center text-red-500 mt-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                    saldo insuficiente
+                  </p>
+                )}
               </div>
-            </SketchCard>
+            </Sketch3DCardGlow>
           </div>
 
-          {/* Sidebar - Histórico */}
+          {/* Sidebar - Historico */}
           <div className="lg:col-span-1">
             <motion.div
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              <h2 className="text-2xl mb-4" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                histórico de envios
-              </h2>
-              <p className="text-xs text-gray-500 mb-4 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                ver todas
-              </p>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl sm:text-2xl" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                  historico de envios
+                </h2>
+                <motion.button 
+                  onClick={loadHistory}
+                  className="p-2 hover:bg-[#F2D06B] rounded transition-colors border-[2px] border-transparent hover:border-black"
+                  title="Atualizar"
+                  whileHover={{ rotate: 180 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <RefreshCw size={16} className={loadingHistory ? "animate-spin" : ""} />
+                </motion.button>
+              </div>
 
               <SketchCard className="p-4">
-                <div className="space-y-4">
-                  {recentTransactions.map((trans, index) => (
-                    <motion.div
-                      key={trans.id}
-                      initial={{ x: -10, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.3 + index * 0.05 }}
-                      className="pb-4 border-b border-gray-200 last:border-0"
-                    >
-                      <div className="flex items-start justify-between mb-1">
-                        <p className="font-medium text-sm" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                          {trans.student}
+                {loadingHistory ? (
+                  <SketchListSkeleton count={5} />
+                ) : recentTransactions.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentTransactions.map((trans, index) => (
+                      <motion.div
+                        key={trans.id}
+                        initial={{ x: -10, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.1 + index * 0.05 }}
+                        className="pb-4 border-b border-gray-200 last:border-0"
+                      >
+                        <div className="flex items-start justify-between mb-1">
+                          <p className="font-medium text-sm" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                            {trans.alunoNome || "Aluno"}
+                          </p>
+                          <SketchBadge variant="gold" className="text-xs px-2 py-0.5">
+                            +{trans.valor}
+                          </SketchBadge>
+                        </div>
+                        {trans.mensagem && (
+                          <p className="text-xs text-gray-700 italic mb-1 line-clamp-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                            &quot;{trans.mensagem}&quot;
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                          {formatDate(trans.data)}
                         </p>
-                        <SketchBadge variant="gold" className="text-xs px-2 py-0.5">
-                          +{trans.amount}
-                        </SketchBadge>
-                      </div>
-                      <p className="text-xs text-gray-700 italic mb-1" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                        "{trans.reason}"
-                      </p>
-                      <p className="text-xs text-gray-500" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                        {trans.date} · {trans.time}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <button className="w-full mt-4 text-center text-sm underline"
-                        style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                  ver últimas distribuições (5)
-                </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic text-center py-4" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                    nenhuma distribuicao ainda
+                  </p>
+                )}
               </SketchCard>
             </motion.div>
           </div>
