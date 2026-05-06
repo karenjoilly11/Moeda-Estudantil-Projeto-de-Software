@@ -4,14 +4,10 @@ import { SketchCard } from "./SketchCard";
 import { SketchButton } from "./SketchButton";
 import { SketchBadge } from "./SketchBadge";
 import { motion, AnimatePresence } from "motion/react";
-import { alunoService } from "@/services/alunoService";
-import { transacaoService } from "@/services/transacaoService";
-import type {
-  Aluno,
-  Transacao,
-  Vantagem,
-  ResgateResponse,
-} from "@/types/api";
+import { alunoService } from "../../services/alunoService";
+import { transacaoService } from "../../services/transacaoService";
+import type { Aluno, Transacao, Vantagem, ResgateResponse } from "../../types/api";
+
 
 interface StudentDashboardProps {
   aluno: Aluno;
@@ -142,10 +138,10 @@ export function StudentDashboard({ aluno, onLogout, onSaldoUpdate }: StudentDash
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors">
+            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Notificações">
               <Bell size={20} />
             </button>
-            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" title={aluno.email}>
+            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Perfil" title={aluno.email}>
               <User size={20} />
             </button>
             {onLogout && (

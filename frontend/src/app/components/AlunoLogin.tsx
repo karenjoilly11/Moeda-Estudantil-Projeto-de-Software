@@ -3,15 +3,17 @@ import { motion } from "motion/react";
 import { SketchCard } from "./SketchCard";
 import { SketchButton } from "./SketchButton";
 import { SketchInput } from "./SketchInput";
-import { alunoService } from "@/services/alunoService";
-import type { Aluno } from "@/types/api";
+import { alunoService } from "../../services/alunoService";
+import { AlunoCadastro } from "../components/AlunoCadastro"; 
+import type { Aluno } from "../../types/api";
 
 interface AlunoLoginProps {
   onLoginSuccess: (aluno: Aluno) => void;
   onCancel: () => void;
+  onCadastroClick?: () => void;
 }
 
-export function AlunoLogin({ onLoginSuccess, onCancel }: AlunoLoginProps) {
+export function AlunoLogin({ onLoginSuccess, onCancel, onCadastroClick }: AlunoLoginProps)  {
   const [email, setEmail] = useState("aluno.demo@pucminas.br");
   const [senha, setSenha] = useState("aluno@2024");
   const [erro, setErro] = useState<string | null>(null);
@@ -118,6 +120,17 @@ export function AlunoLogin({ onLoginSuccess, onCancel }: AlunoLoginProps) {
               >
                 seed: aluno.demo@pucminas.br · aluno@2024
               </p>
+              
+              <div className="text-center mt-2">
+                <button
+                  type="button"
+                  onClick={() => onCadastroClick?.()}
+                  className="text-sm text-[#F2D06B] underline hover:no-underline"
+                  style={{ fontFamily: "'Architects Daughter', cursive" }}
+                >
+                  ainda não tem conta? cadastre-se
+                </button>
+              </div>
             </form>
           </div>
         </SketchCard>

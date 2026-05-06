@@ -5,8 +5,9 @@ import { ProfessorDashboard } from "./components/ProfessorDashboard";
 import { ProfessorClassView } from "./components/ProfessorClassView";
 import { CompanyDashboard } from "./components/CompanyDashboard";
 import { AlunoLogin } from "./components/AlunoLogin";
-import { alunoService } from "@/services/alunoService";
-import type { Aluno } from "@/types/api";
+import { AlunoCadastro } from "./components/AlunoCadastro";
+import { alunoService } from "../services/alunoService";
+import type { Aluno } from "../types/api";
 
 type UserRole = "student" | "professor" | "professor-class" | "company" | null;
 type StudentStage = "login" | "dashboard";
@@ -15,6 +16,7 @@ export default function App() {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [studentStage, setStudentStage] = useState<StudentStage>("login");
   const [aluno, setAluno] = useState<Aluno | null>(null);
+  const [mostrarCadastro, setMostrarCadastro] = useState(false);
 
   // Restaurar sessão do aluno se existir
   useEffect(() => {
@@ -31,6 +33,7 @@ export default function App() {
         setStudentStage("dashboard");
       } else {
         setStudentStage("login");
+        setMostrarCadastro(false);
       }
     }
     setUserRole(role);
@@ -39,13 +42,22 @@ export default function App() {
   const handleLoginSuccess = (a: Aluno) => {
     setAluno(a);
     setStudentStage("dashboard");
+    setMostrarCadastro(false);
   };
+
+  const handleCadastroSuccess = (a: Aluno) => {
+  setMostrarCadastro(false);
+  setStudentStage("login");
+  setAluno(null);
+  alert("Cadastro realizado com sucesso! Faça login para continuar.");
+};
 
   const handleStudentLogout = () => {
     alunoService.logout();
     setAluno(null);
     setStudentStage("login");
     setUserRole(null);
+    setMostrarCadastro(false);
   };
 
   const handleSaldoUpdate = (novoSaldo: number) => {
@@ -55,14 +67,25 @@ export default function App() {
     alunoService.atualizarCache(atualizado);
   };
 
+
   return (
     <div className="size-full">
       {!userRole && <RoleSelection onSelectRole={handleRoleSelection} />}
 
-      {userRole === "student" && studentStage === "login" && (
+      {/* TELA DE LOGIN DO ALUNO */}
+      {userRole === "student" && studentStage === "login" && !mostrarCadastro && (
         <AlunoLogin
           onLoginSuccess={handleLoginSuccess}
           onCancel={() => setUserRole(null)}
+          onCadastroClick={() => setMostrarCadastro(true)}
+        />
+      )}
+
+      {/* TELA DE CADASTRO DO ALUNO */}
+      {userRole === "student" && mostrarCadastro && (
+        <AlunoCadastro
+          onCadastroSuccess={handleCadastroSuccess}
+          onCancel={() => setMostrarCadastro(false)}
         />
       )}
 
