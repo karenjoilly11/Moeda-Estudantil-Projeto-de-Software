@@ -46,4 +46,15 @@ public class TransacaoController {
             return ResponseEntity.status(404).body(e.getMessage());
         }
     }
+
+    @PostMapping("/utilizar/{codigo}")
+    public ResponseEntity<?> utilizarCupom(@PathVariable String codigo) {
+        try {
+            return ResponseEntity.ok(transacaoService.utilizarCupom(codigo));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

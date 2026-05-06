@@ -25,6 +25,10 @@ public class Vantagem {
     private Double custoMoedas;
 
     @ManyToOne
-    @JoinColumn(name = "instituicao_id", nullable = false)
+    @JoinColumn(name = "instituicao_id", nullable = true)
     private Instituicao instituicao;
+
+    @ManyToOne
+    @JoinColumn(name = "empresa_id", nullable = true)
+    private Empresa empresa;
 }

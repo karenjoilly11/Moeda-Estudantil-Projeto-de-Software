@@ -17,11 +17,15 @@ public class Transacao {
     @ManyToOne
     @JoinColumn(name = "aluno_id")
     private Aluno aluno;
-    
+
     @ManyToOne
     @JoinColumn(name = "professor_id")
     private Professor professor;
-    
+
+    @ManyToOne
+    @JoinColumn(name = "vantagem_id")
+    private Vantagem vantagem;
+
     @Column(nullable = false)
     private Double valor;
     

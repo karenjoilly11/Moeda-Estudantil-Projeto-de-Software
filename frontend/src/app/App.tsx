@@ -6,33 +6,19 @@ import { StudentDashboard } from "./components/StudentDashboard";
 import { ProfessorDashboard } from "./components/ProfessorDashboard";
 import { ProfessorClassView } from "./components/ProfessorClassView";
 import { CompanyDashboard } from "./components/CompanyDashboard";
-<<<<<<< HEAD
 import { useAuth, useAluno, useProfessor, useEmpresa } from "@/contexts/AuthContext";
 import type { UserRole } from "@/types/api";
-=======
-import { AlunoLogin } from "./components/AlunoLogin";
-import { AlunoCadastro } from "./components/AlunoCadastro";
-import { alunoService } from "../services/alunoService";
-import type { Aluno } from "../types/api";
->>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
 
 type AppScreen = "role-selection" | "login" | "dashboard" | "professor-class";
 
 export default function App() {
-<<<<<<< HEAD
   const { isAuthenticated, isLoading, role, logout, updateUser } = useAuth();
   const { aluno } = useAluno();
   const { professor } = useProfessor();
   const { empresa } = useEmpresa();
-  
+
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [screen, setScreen] = useState<AppScreen>("role-selection");
-=======
-  const [userRole, setUserRole] = useState<UserRole>(null);
-  const [studentStage, setStudentStage] = useState<StudentStage>("login");
-  const [aluno, setAluno] = useState<Aluno | null>(null);
-  const [mostrarCadastro, setMostrarCadastro] = useState(false);
->>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
 
   // Sincronizar tela com estado de autenticacao
   useEffect(() => {
@@ -42,14 +28,9 @@ export default function App() {
         setSelectedRole(role);
         setScreen("dashboard");
       } else {
-<<<<<<< HEAD
         // Usuario nao autenticado - vai para selecao de role
         setScreen("role-selection");
         setSelectedRole(null);
-=======
-        setStudentStage("login");
-        setMostrarCadastro(false);
->>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
       }
     }
   }, [isAuthenticated, isLoading, role]);
@@ -97,7 +78,6 @@ export default function App() {
     }
   };
 
-<<<<<<< HEAD
   const handleLoginSuccess = () => {
     setScreen("dashboard");
   };
@@ -111,27 +91,6 @@ export default function App() {
     logout();
     setSelectedRole(null);
     setScreen("role-selection");
-=======
-  const handleLoginSuccess = (a: Aluno) => {
-    setAluno(a);
-    setStudentStage("dashboard");
-    setMostrarCadastro(false);
-  };
-
-  const handleCadastroSuccess = (a: Aluno) => {
-  setMostrarCadastro(false);
-  setStudentStage("login");
-  setAluno(null);
-  alert("Cadastro realizado com sucesso! Faça login para continuar.");
-};
-
-  const handleStudentLogout = () => {
-    alunoService.logout();
-    setAluno(null);
-    setStudentStage("login");
-    setUserRole(null);
-    setMostrarCadastro(false);
->>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
   };
 
   const handleSaldoUpdate = (novoSaldo: number) => {
@@ -258,81 +217,9 @@ export default function App() {
 
   return (
     <div className="size-full">
-<<<<<<< HEAD
       <AnimatePresence mode="wait">
         {renderContent()}
       </AnimatePresence>
-=======
-      {!userRole && <RoleSelection onSelectRole={handleRoleSelection} />}
-
-      {/* TELA DE LOGIN DO ALUNO */}
-      {userRole === "student" && studentStage === "login" && !mostrarCadastro && (
-        <AlunoLogin
-          onLoginSuccess={handleLoginSuccess}
-          onCancel={() => setUserRole(null)}
-          onCadastroClick={() => setMostrarCadastro(true)}
-        />
-      )}
-
-      {/* TELA DE CADASTRO DO ALUNO */}
-      {userRole === "student" && mostrarCadastro && (
-        <AlunoCadastro
-          onCadastroSuccess={handleCadastroSuccess}
-          onCancel={() => setMostrarCadastro(false)}
-        />
-      )}
-
-      {userRole === "student" && studentStage === "dashboard" && aluno && (
-        <StudentDashboard
-          aluno={aluno}
-          onLogout={handleStudentLogout}
-          onSaldoUpdate={handleSaldoUpdate}
-        />
-      )}
-
-      {userRole === "professor" && <ProfessorDashboard professorName="Costa" />}
-
-      {userRole === "professor-class" && <ProfessorClassView />}
-
-      {userRole === "company" && <CompanyDashboard companyName="Livraria Cultura" />}
-
-      {/* Development Navigation */}
-      {userRole && !(userRole === "student" && studentStage === "login") && (
-        <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
-          <button
-            onClick={() => {
-              if (userRole === "student") {
-                handleStudentLogout();
-              } else {
-                setUserRole(null);
-              }
-            }}
-            className="px-4 py-2 bg-white border-[2.5px] border-black shadow-[3px_3px_0px_#000000] hover:shadow-[5px_5px_0px_#000000] transition-all"
-            style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
-          >
-            ← Voltar
-          </button>
-          {userRole === "professor" && (
-            <button
-              onClick={() => setUserRole("professor-class")}
-              className="px-4 py-2 bg-[#F2D06B] border-[2.5px] border-black shadow-[3px_3px_0px_#000000] hover:shadow-[5px_5px_0px_#000000] transition-all text-sm"
-              style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
-            >
-              Ver Turma
-            </button>
-          )}
-          {userRole === "professor-class" && (
-            <button
-              onClick={() => setUserRole("professor")}
-              className="px-4 py-2 bg-[#F2D06B] border-[2.5px] border-black shadow-[3px_3px_0px_#000000] hover:shadow-[5px_5px_0px_#000000] transition-all text-sm"
-              style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
-            >
-              Ver Dashboard
-            </button>
-          )}
-        </div>
-      )}
->>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
     </div>
   );
 }

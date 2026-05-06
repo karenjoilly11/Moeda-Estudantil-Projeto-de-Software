@@ -21,6 +21,7 @@ public class VantagemCadastroDTO {
     @Positive(message = "Custo deve ser maior que zero")
     private Double custoMoedas;
 
-    @NotNull(message = "Instituição é obrigatória")
+    // Vínculo: instituicaoId OU empresaId (pelo menos um obrigatório, validado no service)
     private Long instituicaoId;
+    private Long empresaId;
 }

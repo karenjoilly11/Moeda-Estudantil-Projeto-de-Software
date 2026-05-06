@@ -1,11 +1,13 @@
 package com.moedaestudantil.api.config;
 
 import com.moedaestudantil.api.entities.Aluno;
+import com.moedaestudantil.api.entities.Empresa;
 import com.moedaestudantil.api.entities.Instituicao;
 import com.moedaestudantil.api.entities.Professor;
 import com.moedaestudantil.api.entities.Vantagem;
 import com.moedaestudantil.api.enums.TipoUsuario;
 import com.moedaestudantil.api.repositories.AlunoRepository;
+import com.moedaestudantil.api.repositories.EmpresaRepository;
 import com.moedaestudantil.api.repositories.InstituicaoRepository;
 import com.moedaestudantil.api.repositories.ProfessorRepository;
 import com.moedaestudantil.api.repositories.VantagemRepository;
@@ -23,6 +25,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ProfessorRepository professorRepository;
     private final AlunoRepository alunoRepository;
     private final VantagemRepository vantagemRepository;
+    private final EmpresaRepository empresaRepository;
     
     // Método auxiliar para codificar senha
     private String codificarSenha(String senha) {
@@ -120,7 +123,25 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("      - Prof. Joana Gabriela de Souza (Ciência de Dados) - Senha: Joana@2024");
 
             // =============================================
-            // VANTAGENS DE EXEMPLO (uma por instituição)
+            // EMPRESA DEMO
+            // Senha: empresa@2024
+            // =============================================
+            Empresa empresaDemo = new Empresa();
+            empresaDemo.setNome("Livraria Cultura");
+            empresaDemo.setEmail("empresa.demo@livraria.com");
+            empresaDemo.setSenha(codificarSenha("empresa@2024"));
+            empresaDemo.setTipo(TipoUsuario.EMPRESA);
+            empresaDemo.setCnpj("12.345.678/0001-99");
+            empresaDemo.setDescricao("Livraria parceira com vouchers e descontos em livros");
+            empresaDemo.setInstituicao(pucCoracao);
+            Empresa empresaSalva = empresaRepository.save(empresaDemo);
+
+            System.out.println("✅ Empresa demo cadastrada:");
+            System.out.println("      - empresa.demo@livraria.com (CNPJ: 12.345.678/0001-99) - Senha: empresa@2024");
+
+            // =============================================
+            // VANTAGENS DE EXEMPLO
+            // (2 vinculadas à empresa demo, 2 só de instituição)
             // =============================================
             Vantagem v1 = new Vantagem();
             v1.setNome("Caderno Universitário PUC");
@@ -128,6 +149,7 @@ public class DataInitializer implements CommandLineRunner {
             v1.setFoto("https://placehold.co/400x300?text=Caderno+PUC");
             v1.setCustoMoedas(50.0);
             v1.setInstituicao(pucCoracao);
+            v1.setEmpresa(empresaSalva);
             vantagemRepository.save(v1);
 
             Vantagem v2 = new Vantagem();
@@ -152,9 +174,10 @@ public class DataInitializer implements CommandLineRunner {
             v4.setFoto("https://placehold.co/400x300?text=Curso+Extensao");
             v4.setCustoMoedas(400.0);
             v4.setInstituicao(pucCoracao);
+            v4.setEmpresa(empresaSalva);
             vantagemRepository.save(v4);
 
-            System.out.println("✅ Vantagens de exemplo carregadas (4 itens).");
+            System.out.println("✅ Vantagens de exemplo carregadas (4 itens, 2 vinculadas à empresa demo).");
 
             // =============================================
             // ALUNO DEMO (com saldo inicial pra testar resgate)

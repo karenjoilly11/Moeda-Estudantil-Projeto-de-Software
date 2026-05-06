@@ -1,11 +1,5 @@
-<<<<<<< HEAD
 import { api, setToken, setRole, setStoredUser, clearAuth, getStoredUser, getRole } from "@/lib/api";
 import type { Aluno, LoginResponse, Vantagem, Transacao } from "@/types/api";
-=======
-import { api, setToken } from "../lib/api";
-import type { Aluno, LoginResponse, Vantagem, Transacao } from "../types/api";
-
->>>>>>> ac722f3751704692b90b6a120479b89ec52ae609
 
 export const alunoService = {
   login: async (email: string, senha: string): Promise<Aluno> => {

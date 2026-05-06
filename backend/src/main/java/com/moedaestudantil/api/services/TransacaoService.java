@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 public class TransacaoService {
 
     private static final String STATUS_PENDENTE = "PENDENTE";
+    private static final String STATUS_UTILIZADO = "UTILIZADO";
 
     private final TransacaoRepository transacaoRepository;
     private final AlunoRepository alunoRepository;
@@ -56,6 +57,7 @@ public class TransacaoService {
         transacao.setMensagem("Resgate da vantagem '" + vantagem.getNome() + "'");
         transacao.setAluno(aluno);
         transacao.setProfessor(null);
+        transacao.setVantagem(vantagem);
         transacao.setCodigoCupom(codigoCupom);
         transacao.setStatus(STATUS_PENDENTE);
         Transacao salva = transacaoRepository.save(transacao);
@@ -84,15 +86,28 @@ public class TransacaoService {
     public CupomValidacaoDTO validarCupom(String codigo) {
         Transacao t = transacaoRepository.findByCodigoCupom(codigo)
                 .orElseThrow(() -> new EntityNotFoundException("Cupom não encontrado!"));
+        return toCupomDTO(t);
+    }
 
-        CupomValidacaoDTO dto = new CupomValidacaoDTO();
-        dto.setCodigoCupom(t.getCodigoCupom());
-        dto.setAlunoNome(t.getAluno() != null ? t.getAluno().getNome() : null);
-        dto.setVantagemNome(extrairNomeVantagem(t.getMensagem()));
-        dto.setCustoMoedas(t.getValor());
-        dto.setStatus(t.getStatus());
-        dto.setDataResgate(t.getData());
-        return dto;
+    @Transactional
+    public CupomValidacaoDTO utilizarCupom(String codigo) {
+        Transacao t = transacaoRepository.findByCodigoCupom(codigo)
+                .orElseThrow(() -> new EntityNotFoundException("Cupom não encontrado!"));
+
+        if (!STATUS_PENDENTE.equals(t.getStatus())) {
+            throw new IllegalStateException(
+                    "Cupom não está pendente (status atual: " + t.getStatus() + ")");
+        }
+
+        t.setStatus(STATUS_UTILIZADO);
+        Transacao salva = transacaoRepository.save(t);
+        return toCupomDTO(salva);
+    }
+
+    public List<CupomValidacaoDTO> cuponsDaEmpresa(Long empresaId) {
+        return transacaoRepository.findCuponsByEmpresaId(empresaId).stream()
+                .map(this::toCupomDTO)
+                .collect(Collectors.toList());
     }
 
     private String gerarCodigoCupom() {
@@ -114,6 +129,21 @@ public class TransacaoService {
         dto.setProfessorNome(t.getProfessor() != null ? t.getProfessor().getNome() : null);
         dto.setCodigoCupom(t.getCodigoCupom());
         dto.setStatus(t.getStatus());
+        return dto;
+    }
+
+    private CupomValidacaoDTO toCupomDTO(Transacao t) {
+        CupomValidacaoDTO dto = new CupomValidacaoDTO();
+        dto.setCodigoCupom(t.getCodigoCupom());
+        dto.setAlunoNome(t.getAluno() != null ? t.getAluno().getNome() : null);
+        if (t.getVantagem() != null) {
+            dto.setVantagemNome(t.getVantagem().getNome());
+        } else {
+            dto.setVantagemNome(extrairNomeVantagem(t.getMensagem()));
+        }
+        dto.setCustoMoedas(t.getValor());
+        dto.setStatus(t.getStatus());
+        dto.setDataResgate(t.getData());
         return dto;
     }
 

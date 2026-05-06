@@ -155,24 +155,12 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
   return (
     <div className="min-h-screen bg-[#F5F2E9]">
       {/* Navbar Dinamica */}
-      <Navbar 
+      <Navbar
         role="professor"
         userName={professor.nome}
         userEmail={professor.email}
         onLogout={onLogout}
       />
-
-
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Notificações">
-              <Bell size={20} />
-            </button>
-            <button className="p-2 hover:bg-[#F5F2E9] rounded-full transition-colors" aria-label="Perfil">
-              <User size={20} />
-            </button>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-7xl mx-auto p-6">
 
