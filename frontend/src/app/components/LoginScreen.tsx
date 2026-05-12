@@ -7,6 +7,7 @@ import { SketchInput } from "./SketchInput";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UserRole } from "@/types/api";
 
+
 const roleConfig = {
   aluno: {
     title: "Aluno",
@@ -44,24 +45,28 @@ interface LoginScreenProps {
   selectedRole: UserRole;
   onBack: () => void;
   onLoginSuccess: () => void;
+  onCadastroClick?: () => void;
 }
 
-export function LoginScreen({ selectedRole, onBack, onLoginSuccess }: LoginScreenProps) {
+export function LoginScreen({ selectedRole, onBack, onLoginSuccess, onCadastroClick }: LoginScreenProps) {
   const config = roleConfig[selectedRole];
   const Icon = config.icon;
-  
+  const isEmpresa = selectedRole === "empresa";
+
   const { login } = useAuth();
-  
+
   const [email, setEmail] = useState(config.seedEmail);
   const [senha, setSenha] = useState(config.seedPassword);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState<"entrar" | "cadastrar">("entrar");
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
     setCarregando(true);
-    
+
     try {
       await login(email, senha, selectedRole);
       onLoginSuccess();
@@ -71,6 +76,9 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess }: LoginScree
       setCarregando(false);
     }
   };
+
+  const handleAbaEntrar = () => setAbaAtiva("entrar");
+  const handleAbaCadastrar = () => onCadastroClick?.();
 
   return (
     <div className="min-h-screen bg-[#F5F2E9] flex items-center justify-center p-4">
@@ -89,7 +97,7 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess }: LoginScree
               <div className="flex items-center gap-3 mb-6">
                 <div
                   className="w-12 h-12 border-[2.5px] border-black flex items-center justify-center"
-                  style={{ 
+                  style={{
                     borderRadius: "50% 45% 48% 52%",
                     backgroundColor: config.iconBg
                   }}
@@ -112,6 +120,39 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess }: LoginScree
                 </div>
               </div>
 
+              {isEmpresa ? (
+                <div className="flex border-b-2 border-black mb-6">
+                  <button
+                    onClick={handleAbaEntrar}
+                    className={`flex-1 py-2 text-center text-lg transition-all ${
+                      abaAtiva === "entrar"
+                        ? "border-b-4 border-[#F2D06B] font-bold"
+                        : "text-gray-500 hover:text-black"
+                    }`}
+                    style={{ fontFamily: "'Architects Daughter', cursive" }}
+                  >
+                    Entrar
+                  </button>
+                  <button
+                    onClick={handleAbaCadastrar}
+                    className={`flex-1 py-2 text-center text-lg transition-all ${
+                      abaAtiva === "cadastrar"
+                        ? "border-b-4 border-[#F2D06B] font-bold"
+                        : "text-gray-500 hover:text-black"
+                    }`}
+                    style={{ fontFamily: "'Architects Daughter', cursive" }}
+                  >
+                    Cadastrar
+                  </button>
+                </div>
+              ) : (
+                <h2 className="text-xl mb-6 text-center" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                  entrar como {config.title.toLowerCase()}
+                </h2>
+              )}
+
+              
+
               {/* Form */}
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <SketchInput
@@ -130,6 +171,7 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess }: LoginScree
                   placeholder="••••••••"
                   required
                 />
+                
 
                 {/* Error message */}
                 {erro && (
@@ -165,6 +207,8 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess }: LoginScree
                   >
                     {carregando ? "entrando..." : "entrar"}
                   </SketchButton>
+
+
                 </div>
 
                 {/* Seed hint */}

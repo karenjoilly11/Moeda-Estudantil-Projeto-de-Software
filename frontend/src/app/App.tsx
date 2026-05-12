@@ -7,12 +7,13 @@ import { ProfessorDashboard } from "./components/ProfessorDashboard";
 import { ProfessorClassView } from "./components/ProfessorClassView";
 import { CompanyDashboard } from "./components/CompanyDashboard";
 import { AlunoCadastro } from "./components/AlunoCadastro";
+import { EmpresaCadastro } from "./components/EmpresaCadastro";
 import type { Aluno } from "@/types/api";
 import { useAuth, useAluno, useProfessor, useEmpresa } from "@/contexts/AuthContext";
 import type { UserRole } from "@/types/api";
 import { AlunoLogin } from "./components/AlunoLogin";
 
-type AppScreen = "role-selection" | "login" | "dashboard" | "professor-class" | "cadastro";
+type AppScreen = "role-selection" | "login" | "dashboard" | "professor-class" | "cadastro" | "cadastro-empresa"; 
 
 export default function App() {
   const { isAuthenticated, isLoading, role, logout, login, updateUser } = useAuth();
@@ -80,8 +81,7 @@ export default function App() {
   }
 };
 
-  const handleLoginSuccess = (alunoLogado: Aluno) => {
-  login(alunoLogado, "aluno");
+  const handleLoginSuccess = () => {
   setScreen("dashboard");
 };
 
@@ -135,7 +135,7 @@ export default function App() {
       );
     }
 
-    // Login Screen
+    
     // Login Screen 
 if (screen === "login" && selectedRole === "aluno") {
   return (
@@ -151,16 +151,36 @@ if (screen === "login" && selectedRole === "aluno") {
   );
 }
 
-// Para outros perfis (professor, empresa), continue usando LoginScreen
-if (screen === "login" && selectedRole && selectedRole !== "aluno") {
+// Tela de Cadastro da Empresa
+if (screen === "cadastro-empresa" && selectedRole === "empresa" && !isAuthenticated) {
   return (
-    <motion.div key="login" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-      <LoginScreen
-        selectedRole={selectedRole}
-        onBack={handleBackToRoleSelection}
-        onLoginSuccess={handleLoginSuccess}
-      />
-    </motion.div>
+    <EmpresaCadastro
+      onCadastroSuccess={() => setScreen("login")}
+      onCancel={() => setScreen("login")}
+      onLoginClick={() => setScreen("login")}
+    />
+  );
+}
+// Login Screen para EMPRESA 
+if (screen === "login" && selectedRole === "empresa") {
+  return (
+    <LoginScreen
+      selectedRole={selectedRole}
+      onBack={handleBackToRoleSelection}
+      onLoginSuccess={() => setScreen("dashboard")}
+      onCadastroClick={() => setScreen("cadastro-empresa")}
+    />
+  );
+}
+
+// Login Screen para PROFESSOR (NÃO tem cadastro)
+if (screen === "login" && selectedRole === "professor") {
+  return (
+    <LoginScreen
+      selectedRole={selectedRole}
+      onBack={handleBackToRoleSelection}
+      onLoginSuccess={() => setScreen("dashboard")}
+    />
   );
 }
 

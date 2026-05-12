@@ -6,8 +6,48 @@ import type {
   VantagemUpdate,
   CupomValidacao
 } from "@/types/api";
+import { setToken } from "../lib/api";
+import { LoginResponse } from "../types/api";
 
 export const empresaService = {
+  /**
+   * Cadastro de nova empresa
+   */
+  cadastrar: async (dados: {
+    nome: string;
+    email: string;
+    cnpj: string;
+    descricao: string;
+    senha: string;
+  }): Promise<Empresa> => {
+    const response = await api.post<Empresa>("/empresa/cadastro", dados);
+    return response;
+  },
+
+  /**
+   * Login da empresa
+   */
+  login: async (email: string, senha: string): Promise<Empresa> => {
+    const resp = await api.post<LoginResponse>("/empresa/login", { email, senha });
+    setToken(resp.token);
+    localStorage.setItem("empresa_data", JSON.stringify(resp.empresa));
+    return resp.empresa;
+  },
+  /**
+   * Logout da empresa
+   */
+  logout: () => {
+    setToken(null);
+    localStorage.removeItem("empresa_data");
+  },
+  /**
+   * Recupera empresa armazenada no cache
+   */
+  empresaArmazenada: (): Empresa | null => {
+    const raw = localStorage.getItem("empresa_data");
+    if (!raw) return null;
+    try { return JSON.parse(raw) as Empresa; } catch { return null; }
+  },
   /**
    * Lista todas as vantagens da empresa
    */
