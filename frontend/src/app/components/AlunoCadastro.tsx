@@ -34,7 +34,13 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel, onLoginClick }: Alu
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   
-
+const formatarCPF = (value: string): string => {
+  const cpf = value.replace(/\D/g, "");
+  if (cpf.length <= 3) return cpf;
+  if (cpf.length <= 6) return cpf.replace(/(\d{3})(\d)/, "$1.$2");
+  if (cpf.length <= 9) return cpf.replace(/(\d{3})(\d{3})(\d)/, "$1.$2.$3");
+  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d)/, "$1.$2.$3-$4");
+};
   
 
   useEffect(() => {
@@ -59,12 +65,14 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel, onLoginClick }: Alu
       return;
     }
 
+    const cpfLimpo = cpf.replace(/\D/g, "");
+
     setCarregando(true);
     try {
       const aluno = await alunoService.cadastrar({
         nome,
         email,
-        cpf,
+        cpf: cpfLimpo,
         rg,
         endereco,
         curso,
@@ -142,7 +150,7 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel, onLoginClick }: Alu
               <SketchInput
                 label="nome completo"
                 value={nome}
-                onChange={(e) => setNome(e.target.value)}
+                onChange={(e) => setNome(e.target.value)} 
                 required
               />
               <SketchInput
@@ -157,8 +165,9 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel, onLoginClick }: Alu
               <SketchInput
                 label="CPF"
                 value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
+                onChange={(e) => setCpf(formatarCPF(e.target.value))}
                 placeholder="123.456.789-00"
+                maxLength={14}
                 required
               />
               <SketchInput
