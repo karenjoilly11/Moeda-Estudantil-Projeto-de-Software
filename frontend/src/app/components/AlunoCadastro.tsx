@@ -17,9 +17,10 @@ interface Instituicao {
 interface AlunoCadastroProps {
   onCadastroSuccess: (aluno: Aluno) => void;
   onCancel: () => void;
+  onLoginClick?: () => void;
 }
 
-export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProps) {
+export function AlunoCadastro({ onCadastroSuccess, onCancel, onLoginClick }: AlunoCadastroProps) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
@@ -32,6 +33,7 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProp
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+  
 
   
 
@@ -77,7 +79,13 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProp
     }
   };
 
-  
+  const handleLoginClick = () => {
+  if (onLoginClick) {
+    onLoginClick();
+  } else {
+    onCancel();
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#F5F2E9] flex items-center justify-center p-4">
@@ -88,16 +96,16 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProp
       >
         <SketchCard>
           <div className="p-2">
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-5">
               <div
-                className="w-12 h-12 bg-[#F2D06B] border-[2.5px] border-black flex items-center justify-center text-2xl"
+                className="w-10 h-10 bg-[#F2D06B] border-[2.5px] border-black flex items-center justify-center text-xl"
                 style={{ borderRadius: "50% 45% 48% 52%" }}
               >
                 📝
               </div>
               <div>
                 <h1
-                  className="text-2xl"
+                  className="text-xl"
                   style={{ fontFamily: "'Architects Daughter', cursive" }}
                 >
                   cadastro de aluno
@@ -111,7 +119,26 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProp
               </div>
             </div>
 
+            {/* ABAS: Cadastrar | Entrar */}
+            <div className="flex border-b-2 border-black mb-6">
+              <button
+                onClick={handleLoginClick}
+                className="flex-1 py-2 text-center text-lg text-gray-500 hover:text-black transition-all"
+                style={{ fontFamily: "'Architects Daughter', cursive" }}
+              >
+                Entrar
+              </button>
+              <button
+                className="flex-1 py-2 text-center text-lg border-b-4 border-[#F2D06B] font-bold"
+                style={{ fontFamily: "'Architects Daughter', cursive" }}
+              >
+                Cadastrar
+              </button>
+            </div>
+
+
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              
               <SketchInput
                 label="nome completo"
                 value={nome}
@@ -125,6 +152,8 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProp
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+             
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <SketchInput
                 label="CPF"
                 value={cpf}
@@ -138,6 +167,7 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProp
                 onChange={(e) => setRg(e.target.value)}
                 required
               />
+              </div>
               <SketchInput
                 label="endereço"
                 value={endereco}
@@ -162,12 +192,14 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProp
                 </select>
               </div>
 
+              
               <SketchInput
                 label="curso"
                 value={curso}
                 onChange={(e) => setCurso(e.target.value)}
                 required
               />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <SketchInput
                 label="senha"
                 type="password"
@@ -182,7 +214,7 @@ export function AlunoCadastro({ onCadastroSuccess, onCancel }: AlunoCadastroProp
                 onChange={(e) => setConfirmarSenha(e.target.value)}
                 required
               />
-
+              </div>
               {erro && (
                 <div className="bg-red-100 border-2 border-red-400 text-red-700 px-3 py-2 text-sm rounded-lg">
                   ⚠ {erro}

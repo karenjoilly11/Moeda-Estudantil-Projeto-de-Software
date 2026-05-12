@@ -6,13 +6,16 @@ import { StudentDashboard } from "./components/StudentDashboard";
 import { ProfessorDashboard } from "./components/ProfessorDashboard";
 import { ProfessorClassView } from "./components/ProfessorClassView";
 import { CompanyDashboard } from "./components/CompanyDashboard";
+import { AlunoCadastro } from "./components/AlunoCadastro";
+import type { Aluno } from "@/types/api";
 import { useAuth, useAluno, useProfessor, useEmpresa } from "@/contexts/AuthContext";
 import type { UserRole } from "@/types/api";
+import { AlunoLogin } from "./components/AlunoLogin";
 
-type AppScreen = "role-selection" | "login" | "dashboard" | "professor-class";
+type AppScreen = "role-selection" | "login" | "dashboard" | "professor-class" | "cadastro";
 
 export default function App() {
-  const { isAuthenticated, isLoading, role, logout, updateUser } = useAuth();
+  const { isAuthenticated, isLoading, role, logout, login, updateUser } = useAuth();
   const { aluno } = useAluno();
   const { professor } = useProfessor();
   const { empresa } = useEmpresa();
@@ -68,18 +71,23 @@ export default function App() {
   }
 
   const handleRoleSelection = (selected: UserRole) => {
-    setSelectedRole(selected);
-    
-    // Se ja esta autenticado com esse role, vai direto pro dashboard
-    if (isAuthenticated && role === selected) {
-      setScreen("dashboard");
-    } else {
-      setScreen("login");
-    }
-  };
-
-  const handleLoginSuccess = () => {
+  setSelectedRole(selected);
+  
+  if (isAuthenticated && role === selected) {
     setScreen("dashboard");
+  } else {
+    setScreen("login");
+  }
+};
+
+  const handleLoginSuccess = (alunoLogado: Aluno) => {
+  login(alunoLogado, "aluno");
+  setScreen("dashboard");
+};
+
+  const handleCadastroSuccess = () => {
+    setScreen("login");
+    alert("✅ Cadastro realizado com sucesso! Faça login para continuar.");
   };
 
   const handleBackToRoleSelection = () => {
@@ -114,23 +122,47 @@ export default function App() {
       );
     }
 
-    // Login Screen
-    if (screen === "login" && selectedRole) {
+    // Tela de Cadastro do Aluno
+    if (screen === "cadastro" && selectedRole === "aluno" && !isAuthenticated) {
       return (
-        <motion.div
-          key="login"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-        >
-          <LoginScreen
-            selectedRole={selectedRole}
-            onBack={handleBackToRoleSelection}
-            onLoginSuccess={handleLoginSuccess}
+        <motion.div key="cadastro" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <AlunoCadastro
+            onCadastroSuccess={handleCadastroSuccess}
+            onCancel={handleBackToRoleSelection}
+            onLoginClick={() => setScreen("login")} 
           />
         </motion.div>
       );
     }
+
+    // Login Screen
+    // Login Screen 
+if (screen === "login" && selectedRole === "aluno") {
+  return (
+    <motion.div key="aluno-login" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+      <AlunoLogin
+  onLoginSuccess={() => {
+    window.location.reload();
+  }}
+  onCancel={handleBackToRoleSelection}
+  onCadastroClick={() => setScreen("cadastro")}
+/>
+    </motion.div>
+  );
+}
+
+// Para outros perfis (professor, empresa), continue usando LoginScreen
+if (screen === "login" && selectedRole && selectedRole !== "aluno") {
+  return (
+    <motion.div key="login" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+      <LoginScreen
+        selectedRole={selectedRole}
+        onBack={handleBackToRoleSelection}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    </motion.div>
+  );
+}
 
     // Dashboards - Protegidos por autenticacao
     if (screen === "dashboard" && isAuthenticated) {

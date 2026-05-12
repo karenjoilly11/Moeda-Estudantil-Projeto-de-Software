@@ -18,6 +18,7 @@ export function AlunoLogin({ onLoginSuccess, onCancel, onCadastroClick }: AlunoL
   const [senha, setSenha] = useState("aluno@2024");
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState<"entrar" | "cadastrar">("entrar");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +32,11 @@ export function AlunoLogin({ onLoginSuccess, onCancel, onCadastroClick }: AlunoL
     } finally {
       setCarregando(false);
     }
+  };
+
+  // Se a aba "cadastrar" for clicada, redireciona
+  const handleAbaCadastrar = () => {
+    onCadastroClick();
   };
 
   return (
@@ -65,6 +71,33 @@ export function AlunoLogin({ onLoginSuccess, onCancel, onCadastroClick }: AlunoL
               </div>
             </div>
 
+
+            {/* ABAS: Entrar | Cadastrar */}
+            <div className="flex border-b-2 border-black mb-6">
+              <button
+                onClick={() => setAbaAtiva("entrar")}
+                className={`flex-1 py-2 text-center text-lg transition-all ${
+                  abaAtiva === "entrar"
+                    ? "border-b-4 border-[#F2D06B] font-bold"
+                    : "text-gray-500 hover:text-black"
+                }`}
+                style={{ fontFamily: "'Architects Daughter', cursive" }}
+              >
+                Entrar
+              </button>
+              <button
+                onClick={handleAbaCadastrar}
+                className={`flex-1 py-2 text-center text-lg transition-all ${
+                  abaAtiva === "cadastrar"
+                    ? "border-b-4 border-[#F2D06B] font-bold"
+                    : "text-gray-500 hover:text-black"
+                }`}
+                style={{ fontFamily: "'Architects Daughter', cursive" }}
+              >
+                Cadastrar
+              </button>
+            </div>
+
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <SketchInput
                 label="email"
@@ -83,6 +116,18 @@ export function AlunoLogin({ onLoginSuccess, onCancel, onCadastroClick }: AlunoL
                 required
               />
 
+              {/* Link "esqueci minha senha" */}
+              <div className="text-right">
+                <button
+                  type="button"
+                  className="text-xs text-gray-500 underline hover:text-black"
+                  style={{ fontFamily: "'Architects Daughter', cursive" }}
+                >
+                  esqueci minha senha
+                </button>
+              </div>
+
+              
               {erro && (
                 <div
                   className="bg-red-100 border-[2px] border-red-400 text-red-700 px-3 py-2 text-sm"
@@ -95,6 +140,7 @@ export function AlunoLogin({ onLoginSuccess, onCancel, onCadastroClick }: AlunoL
                 </div>
               )}
 
+              
               <div className="flex gap-3 mt-2">
                 <SketchButton
                   variant="outline"
@@ -121,16 +167,7 @@ export function AlunoLogin({ onLoginSuccess, onCancel, onCadastroClick }: AlunoL
                 seed: aluno.demo@pucminas.br · aluno@2024
               </p>
               
-              <div className="text-center mt-2">
-                <button
-                  type="button"
-                  onClick={() => onCadastroClick?.()}
-                  className="text-sm text-[#F2D06B] underline hover:no-underline"
-                  style={{ fontFamily: "'Architects Daughter', cursive" }}
-                >
-                  ainda não tem conta? cadastre-se
-                </button>
-              </div>
+              
             </form>
           </div>
         </SketchCard>
