@@ -7,7 +7,7 @@ export const alunoService = {
     setToken(resp.token);
     setRole('aluno');
     console.log("✅ Aluno logado:", resp.aluno);
-setStoredUser(resp.aluno);
+    setStoredUser(resp.aluno);
     return resp.aluno;
   },
 
@@ -32,21 +32,21 @@ setStoredUser(resp.aluno);
   /**
  * Atualiza perfil do aluno
  */
- atualizarPerfil: async (dados: {
-  nome: string;
-  email: string;
-  endereco: string;
-  curso: string;
-}): Promise<Aluno> => {
-  const aluno = getStoredUser<Aluno>();
-  
-  if (!aluno?.id) {
-    throw new Error("ID do aluno não encontrado");
-  }
-  
-  const response = await api.put(`/aluno/perfil/${aluno.id}`, dados);
-  return response.data;
-},
+  atualizarPerfil: async (dados: {
+    nome: string;
+    email: string;
+    endereco: string;
+    curso: string;
+  }): Promise<Aluno> => {
+    const aluno = getStoredUser<Aluno>();
+
+    if (!aluno?.id) {
+      throw new Error("ID do aluno não encontrado");
+    }
+
+    const response = await api.put(`/aluno/perfil/${aluno.id}`, dados);
+    return response.data;
+  },
 
   /**
    * Altera senha do aluno
@@ -56,6 +56,26 @@ setStoredUser(resp.aluno);
     novaSenha: string;
   }): Promise<void> => {
     await api.put("/aluno/senha", dados);
+  },
+
+  /**
+ * Exclui a conta do aluno permanentemente
+ */
+  excluirConta: async (alunoId: number): Promise<void> => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`http://localhost:8080/api/aluno/${alunoId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao excluir conta');
+    }
+
+    clearAuth();
   },
 
   alunoArmazenado: (): Aluno | null => {
@@ -76,5 +96,5 @@ setStoredUser(resp.aluno);
   buscarDados: (alunoId: number) =>
     api.get<Aluno>(`/aluno/${alunoId}`),
 
-  
+
 };

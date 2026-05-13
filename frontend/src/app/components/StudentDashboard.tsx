@@ -164,6 +164,52 @@ const handleEditSubmit = async (e: React.FormEvent) => {
     }
   };
 
+  // Adicione junto com as outras funções (próximo ao handleEditSubmit)
+const handleExcluirConta = async () => {
+  // Confirmação com o usuário
+  const confirmacao = window.confirm(
+    "⚠️ ATENÇÃO! ⚠️\n\n" +
+    "Você está prestes a EXCLUIR PERMANENTEMENTE sua conta.\n\n" +
+    "Isso irá:\n" +
+    "• Remover todos os seus dados pessoais\n" +
+    "• Perder todo seu saldo de moedas\n" +
+    "• Perder histórico de transações\n" +
+    "• Não será possível recuperar\n\n" +
+    "Digite 'EXCLUIR' para confirmar:"
+  );
+  
+  if (!confirmacao) return;
+  
+  // Segunda confirmação com texto específico
+  const textoConfirmacao = window.prompt(
+    "Digite 'EXCLUIR MINHA CONTA' para confirmar a exclusão permanente:"
+  );
+  
+  if (textoConfirmacao !== "EXCLUIR MINHA CONTA") {
+    alert("Confirmação incorreta. A exclusão foi cancelada.");
+    return;
+  }
+  
+  setSalvando(true);
+  
+  try {
+    await alunoService.excluirConta(aluno.id);
+    
+    // Limpa os dados do localStorage
+    localStorage.clear();
+    
+    alert("✅ Conta excluída com sucesso!");
+    
+    // Redireciona para o login
+    window.location.href = "/login";
+  } catch (err: any) {
+    console.error("Erro ao excluir conta:", err);
+    alert("❌ Erro ao excluir conta: " + (err.response?.data || err.message));
+  } finally {
+    setSalvando(false);
+  }
+};
+
   const { fireGoldCoins, fireSuccess } = useConfetti();
 
   const balance = aluno.saldoMoedas;
@@ -641,7 +687,19 @@ const handleEditSubmit = async (e: React.FormEvent) => {
                     {salvando ? "Salvando..." : "Salvar"}
                   </SketchButton>
                 </div>
+                <div className="mt-6 pt-4 border-t-2 border-red-200">
+    <button
+      type="button"
+      onClick={handleExcluirConta}
+      className="w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+      style={{ fontFamily: "'Architects Daughter', cursive" }}
+    >
+      Excluir minha conta
+    </button>
+  
+  </div>
               </form>
+              
             ) : (
               <form onSubmit={handleSenhaSubmit} className="flex flex-col gap-4">
                 <SketchInput

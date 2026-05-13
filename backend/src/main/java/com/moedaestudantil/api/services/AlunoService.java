@@ -11,6 +11,7 @@ import com.moedaestudantil.api.enums.TipoUsuario;
 import com.moedaestudantil.api.repositories.AlunoRepository;
 import com.moedaestudantil.api.repositories.InstituicaoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional; 
 import org.springframework.stereotype.Service;
 
 import java.util.Base64;
@@ -104,5 +105,18 @@ public class AlunoService {
         Aluno aluno = alunoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
         return toResponseDTO(aluno);
+    }
+
+    @Transactional // 🆕 Adicione esta anotação
+    public void excluirConta(Long id) {
+        System.out.println("🔍 Verificando existência do aluno ID: " + id);
+        
+        Aluno aluno = alunoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
+        
+        System.out.println("🗑️ Excluindo aluno: " + aluno.getNome());
+        
+        alunoRepository.delete(aluno);
+        System.out.println("✅ Aluno excluído com sucesso!");
     }
 }

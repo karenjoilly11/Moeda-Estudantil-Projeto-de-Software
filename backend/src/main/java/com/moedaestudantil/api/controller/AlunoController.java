@@ -57,4 +57,16 @@ public ResponseEntity<?> atualizarPerfilComId(
             return ResponseEntity.notFound().build();
         }
     }
+    @DeleteMapping("/{id}")
+public ResponseEntity<?> excluirConta(@PathVariable Long id) {
+    try {
+        System.out.println("🗑️ Excluindo conta do aluno ID: " + id);
+        alunoService.excluirConta(id);
+        System.out.println("✅ Conta excluída com sucesso!");
+        return ResponseEntity.ok().body("Conta excluída com sucesso");
+    } catch (Exception e) {
+        System.err.println("❌ Erro ao excluir conta: " + e.getMessage());
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
 }
