@@ -50,12 +50,12 @@ export function EmpresaCadastro({ onCadastroSuccess, onCancel, onLoginClick }: E
     setCarregando(true);
     try {
       const empresa = await empresaService.cadastrar({
-        nome,
-        email,
-        cnpj: cnpjLimpo,
-        descricao,
-        senha,
-      });
+  nome,
+  email,
+  cnpj: cnpjLimpo,
+  descricao,
+  senha,
+});
       onCadastroSuccess(empresa);
     } catch (err: any) {
       setErro(err?.message || "Falha no cadastro");
