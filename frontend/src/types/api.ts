@@ -71,14 +71,14 @@ export interface AlunoResumo {
 export interface EnvioMoedasRequest {
   professorId: number;
   alunoId: number;
-  quantidade: number;
+  valor: number;
   mensagem: string;
 }
 
 export interface EnvioMoedasResponse {
   transacaoId: number;
   alunoNome: string;
-  quantidade: number;
+  valor: number;
   saldoRestanteProfessor: number;
   dataEnvio: string;
 }
@@ -90,6 +90,8 @@ export interface VantagemCreate {
   descricao: string;
   foto: string;
   custoMoedas: number;
+  estoque?: number;
+  categoria?: string;
   empresaId: number;
 }
 
@@ -98,6 +100,9 @@ export interface VantagemUpdate {
   descricao?: string;
   foto?: string;
   custoMoedas?: number;
+  estoque?: number;
+  categoria?: string;
+  empresaId?: number;
 }
 
 export interface Vantagem {
@@ -106,7 +111,11 @@ export interface Vantagem {
   descricao: string;
   foto: string;
   custoMoedas: number;
+  estoque?: number;
+  categoria?: string;
   instituicaoNome: string;
+  empresaId?: number;
+  instituicaoId?: number;
 }
 
 export type TipoTransacao = "ENVIO" | "RESGATE" | "RECEBIMENTO";

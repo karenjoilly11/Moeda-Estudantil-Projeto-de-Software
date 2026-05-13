@@ -69,6 +69,8 @@ public class VantagemService {
         vantagem.setDescricao(dto.getDescricao());
         vantagem.setFoto(dto.getFoto());
         vantagem.setCustoMoedas(dto.getCustoMoedas());
+        vantagem.setEstoque(dto.getEstoque());
+        vantagem.setCategoria(dto.getCategoria());
 
         if (dto.getInstituicaoId() != null) {
             Instituicao instituicao = instituicaoRepository.findById(dto.getInstituicaoId())
@@ -94,12 +96,16 @@ public class VantagemService {
         dto.setDescricao(vantagem.getDescricao());
         dto.setFoto(vantagem.getFoto());
         dto.setCustoMoedas(vantagem.getCustoMoedas());
+        dto.setEstoque(vantagem.getEstoque());
+        dto.setCategoria(vantagem.getCategoria());
 
         // Prioriza nome da empresa quando vinculada; senão usa instituição
         if (vantagem.getEmpresa() != null) {
             dto.setInstituicaoNome(vantagem.getEmpresa().getNome());
+            dto.setEmpresaId(vantagem.getEmpresa().getId());
         } else if (vantagem.getInstituicao() != null) {
             dto.setInstituicaoNome(vantagem.getInstituicao().getNome());
+            dto.setInstituicaoId(vantagem.getInstituicao().getId());
         }
 
         return dto;

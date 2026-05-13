@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Seu cupom de resgate</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #F5F2E9; padding: 24px;">
+  <div style="background-color: #fff; border: 2px solid #000; border-radius: 12px; padding: 32px; box-shadow: 5px 5px 0 #000;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="width: 64px; height: 64px; background: #F2D06B; border: 2px solid #000; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 32px;">🎟</div>
+      <h1 style="margin: 12px 0 4px; color: #1A1A1A;">Cupom Resgatado!</h1>
+      <p style="margin: 0; color: #555; font-size: 14px;">Apresente o código no estabelecimento</p>
+    </div>
+
+    <p style="font-size: 16px; color: #1A1A1A;">
+      Olá <strong th:text="${alunoNome}">Aluno</strong>,
+    </p>
+
+    <p style="font-size: 15px; color: #1A1A1A; line-height: 1.6;">
+      Você resgatou com sucesso a vantagem <strong th:text="${vantagemNome}">Vantagem</strong>.
+    </p>
+
+    <div style="background: linear-gradient(135deg, #FFF8E1, #FFE082); border: 2px dashed #ff9800; padding: 24px; border-radius: 8px; margin: 24px 0; text-align: center;">
+      <p style="margin: 0 0 12px; color: #555; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Seu código</p>
+      <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 36px; font-weight: bold; letter-spacing: 6px; color: #e65100;" th:text="${codigoCupom}">XXXXXXXX</p>
+    </div>
+
+    <p style="font-size: 14px; color: #555;">
+      Custo: <strong th:text="${custoMoedas}">0</strong> moedas · Saldo restante: <strong th:text="${saldoRestante}">0</strong> moedas
+    </p>
+
+    <p style="font-size: 13px; color: #888; margin-top: 20px;">
+      <strong>Como utilizar:</strong> apresente este código no estabelecimento <span th:text="${empresaNome}">Empresa</span>
+      para validar o resgate. O cupom é único e só pode ser usado uma vez.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+    <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">
+      Este é um email automático — PUC Minas · Moeda Estudantil
+    </p>
+  </div>
+</body>
+</html>

@@ -112,6 +112,19 @@ public class DataInitializer implements CommandLineRunner {
             profJoana.setDepartamento("Ciência de Dados");
             profJoana.setSaldoMoedas(1000.0);
             professorRepository.save(profJoana);
+
+            // Professor DEMO (usado pela UI: LoginScreen seedEmail)
+            // Senha: professor@2024
+            Professor profDemo = new Professor();
+            profDemo.setNome("Prof. Demonstração");
+            profDemo.setEmail("professor.demo@pucminas.br");
+            profDemo.setSenha(codificarSenha("professor@2024"));
+            profDemo.setTipo(TipoUsuario.PROFESSOR);
+            profDemo.setInstituicao(pucCoracao);
+            profDemo.setCpf("55566677788");
+            profDemo.setDepartamento("Engenharia de Software");
+            profDemo.setSaldoMoedas(1000.0);
+            professorRepository.save(profDemo);
             
             System.out.println("✅ Professores pré-cadastrados com sucesso!");
             System.out.println("   📍 Campus Coração Eucarístico:");
@@ -139,6 +152,18 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("✅ Empresa demo cadastrada:");
             System.out.println("      - empresa.demo@livraria.com (CNPJ: 12.345.678/0001-99) - Senha: empresa@2024");
 
+            // Empresa DEMO 2 (usada pela UI: LoginScreen seedEmail "empresa.demo@parceiro.com")
+            Empresa empresaParceiro = new Empresa();
+            empresaParceiro.setNome("Parceiro Demo");
+            empresaParceiro.setEmail("empresa.demo@parceiro.com");
+            empresaParceiro.setSenha(codificarSenha("empresa@2024"));
+            empresaParceiro.setTipo(TipoUsuario.EMPRESA);
+            empresaParceiro.setCnpj("98.765.432/0001-10");
+            empresaParceiro.setDescricao("Empresa parceira de demonstração");
+            empresaParceiro.setInstituicao(pucCoracao);
+            empresaRepository.save(empresaParceiro);
+            System.out.println("      - empresa.demo@parceiro.com (CNPJ: 98.765.432/0001-10) - Senha: empresa@2024");
+
             // =============================================
             // VANTAGENS DE EXEMPLO
             // (2 vinculadas à empresa demo, 2 só de instituição)
@@ -148,6 +173,8 @@ public class DataInitializer implements CommandLineRunner {
             v1.setDescricao("Caderno oficial PUC Minas — 200 folhas, capa dura");
             v1.setFoto("https://placehold.co/400x300?text=Caderno+PUC");
             v1.setCustoMoedas(50.0);
+            v1.setEstoque(10);
+            v1.setCategoria("livros");
             v1.setInstituicao(pucCoracao);
             v1.setEmpresa(empresaSalva);
             vantagemRepository.save(v1);
@@ -157,6 +184,8 @@ public class DataInitializer implements CommandLineRunner {
             v2.setDescricao("Crédito de R$ 20 na cantina do campus Barreiro");
             v2.setFoto("https://placehold.co/400x300?text=Voucher+Cantina");
             v2.setCustoMoedas(100.0);
+            v2.setEstoque(20);
+            v2.setCategoria("comida");
             v2.setInstituicao(pucBarreiro);
             vantagemRepository.save(v2);
 
@@ -165,6 +194,8 @@ public class DataInitializer implements CommandLineRunner {
             v3.setDescricao("Camiseta oficial em algodão — modelos M, G, GG");
             v3.setFoto("https://placehold.co/400x300?text=Camiseta+PUC");
             v3.setCustoMoedas(250.0);
+            v3.setEstoque(15);
+            v3.setCategoria("outros");
             v3.setInstituicao(pucLourdes);
             vantagemRepository.save(v3);
 
@@ -173,6 +204,8 @@ public class DataInitializer implements CommandLineRunner {
             v4.setDescricao("Vaga gratuita em curso de extensão de até 40h");
             v4.setFoto("https://placehold.co/400x300?text=Curso+Extensao");
             v4.setCustoMoedas(400.0);
+            v4.setEstoque(5);
+            v4.setCategoria("cursos");
             v4.setInstituicao(pucCoracao);
             v4.setEmpresa(empresaSalva);
             vantagemRepository.save(v4);

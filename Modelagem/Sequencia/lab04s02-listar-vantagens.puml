@@ -1,0 +1,38 @@
+@startuml lab04s02-listar-vantagens
+title Lab04S02 - Listagem de Vantagens (Aluno)
+
+actor "Aluno" as Aluno
+participant "StudentDashboard\n(React)" as UI
+participant "alunoService.ts" as Service
+participant "api.ts (fetch)" as Api
+participant "VantagemController" as Ctrl
+participant "VantagemService" as Svc
+participant "VantagemRepository" as Rep
+database "H2 Database" as DB
+
+Aluno -> UI : abre Dashboard\n(useEffect dispara)
+UI -> Service : listarVantagens()
+Service -> Api : GET /api/vantagem\n+ Bearer token
+Api -> Ctrl : @GetMapping listar()
+Ctrl -> Svc : listar()
+Svc -> Rep : findAll(Sort.by("custoMoedas").asc())
+Rep -> DB : SELECT * FROM vantagens\nORDER BY custo_moedas ASC
+DB --> Rep : List<Vantagem>
+Rep --> Svc : List<Vantagem>
+
+loop para cada Vantagem
+    Svc -> Svc : toResponseDTO(v)\n(usa empresa.nome ou\ninstituicao.nome)
+end
+
+Svc --> Ctrl : List<VantagemResponseDTO>
+Ctrl --> Api : HTTP 200 + JSON
+Api --> Service : Vantagem[]
+Service --> UI : array de vantagens
+UI -> UI : renderiza grid de cards\n(filtra por searchQuery)
+UI --> Aluno : exibe marketplace
+
+Aluno -> UI : digita "caderno" na busca
+UI -> UI : useMemo filteredRewards\n(filtro client-side)
+UI --> Aluno : exibe vantagens filtradas
+
+@enduml

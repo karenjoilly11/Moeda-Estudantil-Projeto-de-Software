@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Você recebeu moedas estudantis!</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #F5F2E9; padding: 24px;">
+  <div style="background-color: #fff; border: 2px solid #000; border-radius: 12px; padding: 32px; box-shadow: 5px 5px 0 #000;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="width: 64px; height: 64px; background: #F2D06B; border: 2px solid #000; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 32px;">💰</div>
+      <h1 style="margin: 12px 0 4px; color: #1A1A1A;">Moeda Estudantil</h1>
+      <p style="margin: 0; color: #555; font-size: 14px;">Você recebeu moedas!</p>
+    </div>
+
+    <p style="font-size: 16px; color: #1A1A1A;">
+      Olá <strong th:text="${alunoNome}">Aluno</strong>,
+    </p>
+
+    <p style="font-size: 15px; color: #1A1A1A; line-height: 1.6;">
+      O professor <strong th:text="${professorNome}">Professor</strong> reconheceu seu desempenho e te enviou
+      <strong style="color: #4caf50; font-size: 18px;"><span th:text="${valor}">0</span> moedas estudantis</strong>.
+    </p>
+
+    <div style="background: #FFF7DD; border: 2px dashed #F2D06B; padding: 16px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0 0 8px; color: #555; font-size: 13px;"><strong>Mensagem do professor:</strong></p>
+      <p style="margin: 0; color: #1A1A1A; font-style: italic;" th:text="${mensagem}">Mensagem aqui</p>
+    </div>
+
+    <p style="font-size: 14px; color: #555;">
+      Acesse o sistema para conferir seu saldo atualizado e trocar suas moedas por vantagens das empresas parceiras.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+    <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">
+      Este é um email automático — PUC Minas · Moeda Estudantil
+    </p>
+  </div>
+</body>
+</html>

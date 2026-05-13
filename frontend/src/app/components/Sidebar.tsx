@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, CheckCircle, BarChart3, User, LogOut, Menu, X, Building2 } from "lucide-react";
+import { Package, CheckCircle, BarChart3, User, LogOut, Menu, X, Building2, Ticket } from "lucide-react";
 import { SketchBadge } from "./SketchBadge";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -17,6 +17,7 @@ export function Sidebar({ activeView, onViewChange, resgatesToday = 43, onLogout
   const menuItems = [
     { id: "minhas-vantagens", label: "minhas vantagens", icon: Package },
     { id: "validacao", label: "validacao de cupons", icon: CheckCircle },
+    { id: "cupons", label: "cupons gerados", icon: Ticket },
     { id: "relatorios", label: "relatorios", icon: BarChart3 },
     { id: "conta", label: "conta", icon: User }
   ];

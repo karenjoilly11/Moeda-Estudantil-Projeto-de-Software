@@ -14,12 +14,15 @@ public class VantagemCadastroDTO {
     @Size(max = 255)
     private String descricao;
 
-    @NotBlank(message = "Foto é obrigatória")
     private String foto;
 
     @NotNull(message = "Custo em moedas é obrigatório")
     @Positive(message = "Custo deve ser maior que zero")
     private Double custoMoedas;
+
+    private Integer estoque;
+
+    private String categoria;
 
     // Vínculo: instituicaoId OU empresaId (pelo menos um obrigatório, validado no service)
     private Long instituicaoId;

@@ -10,6 +10,9 @@ backend/target/
 frontend/dist/
 frontend/node_modules/
 
+# H2 database (persistencia local)
+backend/data/
+
 # IDE
 .idea/
 .vscode/

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmação de envio de moedas</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #F5F2E9; padding: 24px;">
+  <div style="background-color: #fff; border: 2px solid #000; border-radius: 12px; padding: 32px; box-shadow: 5px 5px 0 #000;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="width: 64px; height: 64px; background: #2196f3; border: 2px solid #000; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; color: #fff;">✓</div>
+      <h1 style="margin: 12px 0 4px; color: #1A1A1A;">Moeda Estudantil</h1>
+      <p style="margin: 0; color: #555; font-size: 14px;">Envio de moedas confirmado</p>
+    </div>
+
+    <p style="font-size: 16px; color: #1A1A1A;">
+      Olá <strong th:text="${professorNome}">Professor</strong>,
+    </p>
+
+    <p style="font-size: 15px; color: #1A1A1A; line-height: 1.6;">
+      Confirmamos o envio de <strong style="color: #2196f3; font-size: 18px;"><span th:text="${valor}">0</span> moedas estudantis</strong>
+      para o aluno <strong th:text="${alunoNome}">Aluno</strong>.
+    </p>
+
+    <div style="background: #E3F2FD; border-left: 4px solid #2196f3; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0 0 4px; color: #555; font-size: 13px;"><strong>Sua mensagem de reconhecimento:</strong></p>
+      <p style="margin: 0; color: #1A1A1A; font-style: italic;" th:text="${mensagem}">Mensagem</p>
+    </div>
+
+    <p style="font-size: 14px; color: #555;">
+      Seu saldo atual: <strong th:text="${saldoRestante}">0</strong> moedas.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+    <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">
+      Este é um email automático — PUC Minas · Moeda Estudantil
+    </p>
+  </div>
+</body>
+</html>

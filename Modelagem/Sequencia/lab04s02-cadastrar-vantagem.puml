@@ -1,0 +1,47 @@
+@startuml lab04s02-cadastrar-vantagem
+title Lab04S02 - Cadastro de Vantagem (Empresa)
+
+actor "Empresa Parceira" as Empresa
+participant "CompanyDashboard\n(React)" as UI
+participant "empresaService.ts" as Service
+participant "api.ts (fetch)" as Api
+participant "VantagemController" as Ctrl
+participant "VantagemService" as Svc
+participant "EmpresaRepository" as ERep
+participant "VantagemRepository" as VRep
+database "H2 Database" as DB
+
+Empresa -> UI : preenche form\n(nome, descricao, foto, custoMoedas)
+UI -> Service : criarVantagem(VantagemCreate)
+Service -> Api : POST /api/vantagem\n+ Bearer token
+Api -> Ctrl : @PostMapping cadastrar(dto)
+
+Ctrl -> Svc : cadastrar(dto)
+
+alt empresaId == null && instituicaoId == null
+    Svc --> Ctrl : RuntimeException\n"precisa empresaId ou instituicaoId"
+    Ctrl --> Api : HTTP 400
+    Api --> Service : ApiError
+    Service --> UI : exibe erro
+    UI --> Empresa : mensagem de erro
+else dados validos
+    Svc -> ERep : findById(empresaId)
+    ERep -> DB : SELECT empresa
+    DB --> ERep : Empresa
+    ERep --> Svc : Optional<Empresa>
+
+    Svc -> Svc : new Vantagem()\nsetar nome, descricao, foto, custoMoedas, empresa
+    Svc -> VRep : save(vantagem)
+    VRep -> DB : INSERT INTO vantagens
+    DB --> VRep : Vantagem(id)
+    VRep --> Svc : Vantagem salva
+
+    Svc -> Svc : toResponseDTO()
+    Svc --> Ctrl : VantagemResponseDTO
+    Ctrl --> Api : HTTP 200 + DTO
+    Api --> Service : Vantagem
+    Service --> UI : Vantagem criada
+    UI --> Empresa : feedback de sucesso\n+ atualiza lista
+end
+
+@enduml

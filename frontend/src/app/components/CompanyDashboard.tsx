@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Package } from "lucide-react";
 import { SketchCard } from "./SketchCard";
 import { SketchButton } from "./SketchButton";
 import { SketchInput } from "./SketchInput";
 import { Sidebar } from "./Sidebar";
 import { CouponValidation } from "./CouponValidation";
 import { RewardsTableView } from "./RewardsTableView";
+import { EmpresaCupons } from "./EmpresaCupons";
 import { motion, AnimatePresence } from "motion/react";
 import { useConfetti } from "@/hooks/useConfetti";
+import { empresaService } from "@/services/empresaService";
+import { ApiError } from "@/lib/api";
 import type { Empresa } from "@/types/api";
 
 interface CompanyDashboardProps {
@@ -23,8 +25,12 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
     description: "",
     cost: "",
     stock: "",
-    category: "comida"
+    category: "comida",
+    imageUrl: "",
   });
+  const [reloadKey, setReloadKey] = useState(0);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const { fireSuccess } = useConfetti();
 
@@ -33,14 +39,45 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
     { id: "livros", label: "Livros" },
     { id: "cursos", label: "Cursos" },
     { id: "lazer", label: "Lazer" },
-    { id: "todos", label: "Outros" }
+    { id: "outros", label: "Outros" },
   ];
 
-  const handleCreateReward = () => {
-    if (newReward.title && newReward.cost && newReward.stock) {
+  const handleCreateReward = async () => {
+    setFormError(null);
+
+    if (!newReward.title.trim()) {
+      setFormError("Título da vantagem é obrigatório");
+      return;
+    }
+    const custoNum = parseFloat(newReward.cost);
+    if (!newReward.cost || isNaN(custoNum) || custoNum <= 0) {
+      setFormError("Custo deve ser um número maior que zero");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await empresaService.criarVantagem({
+        nome: newReward.title,
+        descricao: newReward.description || newReward.title,
+        foto: newReward.imageUrl || "",
+        custoMoedas: custoNum,
+        estoque: newReward.stock ? parseInt(newReward.stock, 10) : undefined,
+        categoria: newReward.category,
+        empresaId: empresa.id,
+      });
       fireSuccess();
       setShowNewRewardForm(false);
-      setNewReward({ title: "", description: "", cost: "", stock: "", category: "comida" });
+      setNewReward({ title: "", description: "", cost: "", stock: "", category: "comida", imageUrl: "" });
+      setReloadKey((k) => k + 1);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setFormError(typeof err.body === "string" ? err.body : "Erro ao criar vantagem");
+      } else {
+        setFormError("Erro ao criar vantagem. Tente novamente.");
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -59,11 +96,15 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
         {activeView === "validacao" && <CouponValidation />}
 
         {activeView === "minhas-vantagens" && (
-          <RewardsTableView 
-            empresaId={empresa.id} 
-            onNewReward={() => setShowNewRewardForm(true)} 
+          <RewardsTableView
+            empresaId={empresa.id}
+            onNewReward={() => setShowNewRewardForm(true)}
+            reloadKey={reloadKey}
+            onChanged={() => setReloadKey((k) => k + 1)}
           />
         )}
+
+        {activeView === "cupons" && <EmpresaCupons empresaId={empresa.id} />}
 
         {activeView === "relatorios" && (
           <div className="p-4 sm:p-6">
@@ -245,29 +286,37 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
                       />
                     </div>
 
-                    {/* Image Upload Placeholder */}
-                    <div>
-                      <label className="text-sm italic mb-2 block" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                        Imagem da vantagem
-                      </label>
-                      <div className="w-full h-32 sm:h-40 bg-gradient-to-br from-[#F5F2E9] to-[#e8e3d4] border-[2.5px] border-dashed border-gray-400 flex flex-col items-center justify-center cursor-pointer hover:border-black transition-colors"
+                    {/* URL da imagem */}
+                    <SketchInput
+                      label="URL da imagem (opcional)"
+                      placeholder="https://placehold.co/400x300"
+                      value={newReward.imageUrl}
+                      onChange={(e) => setNewReward({ ...newReward, imageUrl: e.target.value })}
+                    />
+                    {newReward.imageUrl && (
+                      <div className="w-full h-32 flex items-center justify-center bg-[#F5F2E9] border-[2.5px] border-black overflow-hidden"
                            style={{ borderRadius: "8px 12px 6px 10px" }}>
-                        <Package size={32} className="text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-500 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                          Clique para fazer upload
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                          (PNG, JPG ate 5MB)
-                        </p>
+                        <img
+                          src={newReward.imageUrl}
+                          alt="preview"
+                          className="max-h-full max-w-full object-contain"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
                       </div>
-                    </div>
+                    )}
                   </div>
+
+                  {formError && (
+                    <p className="text-red-600 text-sm mt-4 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                      {formError}
+                    </p>
+                  )}
 
                   <div className="border-t-2 border-dashed border-gray-300 mt-6 pt-6 flex flex-col sm:flex-row gap-3">
                     <SketchButton
                       variant="outline"
                       className="flex-1"
-                      onClick={() => setShowNewRewardForm(false)}
+                      onClick={() => { setShowNewRewardForm(false); setFormError(null); }}
                     >
                       Cancelar
                     </SketchButton>
@@ -275,8 +324,9 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
                       variant="primary"
                       className="flex-1"
                       onClick={handleCreateReward}
+                      disabled={submitting}
                     >
-                      Criar Vantagem
+                      {submitting ? "Criando..." : "Criar Vantagem"}
                     </SketchButton>
                   </div>
                 </div>

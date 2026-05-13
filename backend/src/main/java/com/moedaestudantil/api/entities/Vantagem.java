@@ -18,11 +18,17 @@ public class Vantagem {
     @Column(nullable = false, length = 255)
     private String descricao;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String foto;
 
     @Column(nullable = false)
     private Double custoMoedas;
+
+    @Column(nullable = true)
+    private Integer estoque;
+
+    @Column(nullable = true, length = 50)
+    private String categoria;
 
     @ManyToOne
     @JoinColumn(name = "instituicao_id", nullable = true)

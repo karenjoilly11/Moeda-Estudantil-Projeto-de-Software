@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Novo resgate de cupom</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #F5F2E9; padding: 24px;">
+  <div style="background-color: #fff; border: 2px solid #000; border-radius: 12px; padding: 32px; box-shadow: 5px 5px 0 #000;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="width: 64px; height: 64px; background: #ff9800; border: 2px solid #000; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 32px;">📩</div>
+      <h1 style="margin: 12px 0 4px; color: #1A1A1A;">Novo Resgate de Cupom</h1>
+      <p style="margin: 0; color: #555; font-size: 14px;">Um aluno acabou de resgatar uma vantagem</p>
+    </div>
+
+    <p style="font-size: 16px; color: #1A1A1A;">
+      Olá <strong th:text="${empresaNome}">Empresa Parceira</strong>,
+    </p>
+
+    <p style="font-size: 15px; color: #1A1A1A; line-height: 1.6;">
+      O aluno <strong th:text="${alunoNome}">Aluno</strong> resgatou a vantagem
+      <strong th:text="${vantagemNome}">Vantagem</strong> no Sistema de Moeda Estudantil.
+    </p>
+
+    <div style="background: #FFF3E0; border: 2px dashed #ff9800; padding: 20px; border-radius: 8px; margin: 24px 0;">
+      <p style="margin: 0 0 8px; color: #555; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Código de verificação</p>
+      <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #e65100; text-align: center;" th:text="${codigoCupom}">XXXXXXXX</p>
+    </div>
+
+    <p style="font-size: 14px; color: #555;">
+      <strong>Valor:</strong> <span th:text="${custoMoedas}">0</span> moedas<br>
+      <strong>Email do aluno:</strong> <span th:text="${alunoEmail}">email@aluno.com</span>
+    </p>
+
+    <p style="font-size: 13px; color: #888; margin-top: 20px;">
+      <strong>Como conferir:</strong> quando o aluno apresentar este código presencialmente, confira que é o mesmo
+      e marque como utilizado no painel da empresa para evitar uso duplicado.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+    <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">
+      Este é um email automático — PUC Minas · Moeda Estudantil
+    </p>
+  </div>
+</body>
+</html>

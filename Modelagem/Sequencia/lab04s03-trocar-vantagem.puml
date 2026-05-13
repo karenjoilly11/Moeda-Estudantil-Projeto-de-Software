@@ -1,0 +1,102 @@
+@startuml lab04s03-trocar-vantagem
+title Lab04S03 - Troca/Resgate de Vantagem (Aluno) + Email
+
+actor "Aluno" as Aluno
+participant "StudentDashboard" as UI
+participant "transacaoService.ts" as Service
+participant "api.ts" as Api
+participant "TransacaoController" as Ctrl
+participant "TransacaoService" as Svc
+participant "AlunoRepository" as ARep
+participant "VantagemRepository" as VRep
+participant "TransacaoRepository" as TRep
+participant "NotificacaoService" as Notif
+participant "JavaMailSender\n+ Thymeleaf" as Mail
+database "H2 Database" as DB
+actor "Inbox Aluno" as InboxA
+actor "Inbox Empresa" as InboxE
+
+Aluno -> UI : clica "Resgatar"\nem vantagem
+UI -> UI : modal de confirmacao
+Aluno -> UI : confirma resgate
+UI -> Service : resgatar(alunoId, vantagemId)
+Service -> Api : POST /api/transacao/resgatar\n{ alunoId, vantagemId }
+Api -> Ctrl : resgatar(dto)
+Ctrl -> Svc : resgatar(dto)\n@Transactional
+
+Svc -> ARep : findById(alunoId)
+ARep -> DB : SELECT aluno
+DB --> ARep : Aluno
+ARep --> Svc : Optional<Aluno>
+
+Svc -> VRep : findById(vantagemId)
+VRep -> DB : SELECT vantagem (+empresa)
+DB --> VRep : Vantagem com empresa
+VRep --> Svc : Optional<Vantagem>
+
+alt saldo < custoMoedas
+    Svc --> Ctrl : IllegalStateException\n"Saldo insuficiente"
+    Ctrl --> Api : HTTP 400
+    Api --> Service : ApiError
+    Service --> UI : erro
+    UI --> Aluno : "sem saldo"
+else saldo suficiente
+    Svc -> Svc : aluno.saldoMoedas -= custoMoedas
+    Svc -> ARep : save(aluno)
+    ARep -> DB : UPDATE alunos SET saldo
+
+    Svc -> Svc : codigoCupom = UUID(8)
+    Svc -> Svc : new Transacao\n(tipo=RESGATE, status=PENDENTE,\nvantagem, codigoCupom)
+    Svc -> TRep : save(transacao)
+    TRep -> DB : INSERT INTO transacoes
+    DB --> TRep : Transacao(id)
+
+    Svc -> Notif : notificarResgateAluno(aluno, vantagem, cupom, saldoRestante)
+    Notif -> Notif : log [EMAIL aluno]
+    alt app.email.enabled == true
+        Notif -> Mail : Thymeleaf process\n"email-resgate-aluno.html"
+        Mail -> InboxA : envia email com cupom
+    end
+
+    Svc -> Notif : notificarResgateEmpresa(vantagem, aluno, cupom)
+    Notif -> Notif : log [EMAIL empresa]
+    alt app.email.enabled == true
+        Notif -> Mail : Thymeleaf process\n"email-resgate-empresa.html"
+        Mail -> InboxE : envia email com codigo
+    end
+
+    Svc --> Ctrl : ResgateResponseDTO\n(cupom, saldoRestante)
+    Ctrl --> Api : HTTP 200 + DTO
+    Api --> Service : ResgateResponse
+    Service --> UI : success
+    UI -> UI : modal exibe cupom\n+ confete dourado
+    UI --> Aluno : codigo de cupom (8 chars)
+end
+
+== Empresa valida (depois) ==
+
+actor "Empresa" as Empresa
+Empresa -> UI : digita cupom em CouponValidation
+UI -> Service : validarCupom(codigo)
+Service -> Api : GET /transacao/validar/{cupom}
+Api -> Svc : validarCupom(codigo)
+Svc -> TRep : findByCodigoCupom(codigo)
+TRep -> DB : SELECT
+DB --> TRep : Transacao
+TRep --> Svc : Optional<Transacao>
+Svc --> UI : CupomValidacaoDTO (status PENDENTE)
+UI --> Empresa : "CUPOM VALIDO"
+
+Empresa -> UI : clica "Utilizar"
+UI -> Api : POST /transacao/utilizar/{cupom}
+Api -> Svc : utilizarCupom(codigo)\n@Transactional
+Svc -> TRep : findByCodigoCupom(codigo)
+TRep --> Svc : Transacao
+Svc -> Svc : valida status == PENDENTE
+Svc -> Svc : transacao.status = "UTILIZADO"
+Svc -> TRep : save
+TRep -> DB : UPDATE status
+Svc --> UI : CupomValidacaoDTO (UTILIZADO)
+UI --> Empresa : "cupom invalidado"
+
+@enduml

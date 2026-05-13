@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.moedaestudantil.api.dto.EnviarMoedasDTO;
-import com.moedaestudantil.api.entities.Transacao;
+import com.moedaestudantil.api.dto.EnvioMoedasResponseDTO;
 import java.util.Base64;
 
 @RestController
@@ -31,8 +31,8 @@ public class ProfessorController {
             @RequestHeader("Authorization") String token) {
         try {
             Long professorId = extractProfessorIdFromToken(token);
-            Transacao transacao = professorService.enviarMoedas(professorId, dto);
-            return ResponseEntity.ok(transacao);
+            EnvioMoedasResponseDTO response = professorService.enviarMoedas(professorId, dto);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

@@ -1,5 +1,6 @@
 package com.moedaestudantil.api.services;
 
+import com.moedaestudantil.api.dto.EnvioMoedasResponseDTO;
 import com.moedaestudantil.api.dto.EnviarMoedasDTO;
 import com.moedaestudantil.api.dto.ProfessorLoginDTO;
 import com.moedaestudantil.api.dto.ProfessorLoginResponseDTO;
@@ -27,6 +28,7 @@ public class ProfessorService {
     private final ProfessorRepository professorRepository;
     private final AlunoRepository alunoRepository;
     private final TransacaoRepository transacaoRepository;
+    private final NotificacaoService notificacaoService;
     
     public ProfessorResponseDTO toResponseDTO(Professor professor) {
         ProfessorResponseDTO dto = new ProfessorResponseDTO();
@@ -62,7 +64,7 @@ public class ProfessorService {
     }
 
     // Enviar moedas para um aluno
-    public Transacao enviarMoedas(Long professorId, EnviarMoedasDTO dto) {
+    public EnvioMoedasResponseDTO enviarMoedas(Long professorId, EnviarMoedasDTO dto) {
         Professor professor = professorRepository.findById(professorId)
                 .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
         
@@ -94,8 +96,20 @@ public class ProfessorService {
         
         professorRepository.save(professor);
         alunoRepository.save(aluno);
-        
-        return transacaoRepository.save(transacao);
+
+        Transacao salva = transacaoRepository.save(transacao);
+
+        // Lab04S01: notificar aluno (recebeu) e professor (confirmacao)
+        notificacaoService.notificarRecebimentoMoeda(aluno, professor, dto.getValor(), dto.getMensagem());
+        notificacaoService.notificarEnvioMoeda(professor, aluno, dto.getValor(), dto.getMensagem(), professor.getSaldoMoedas());
+
+        return new EnvioMoedasResponseDTO(
+                salva.getId(),
+                aluno.getNome(),
+                salva.getValor(),
+                professor.getSaldoMoedas(),
+                salva.getData() != null ? salva.getData().toString() : null
+        );
     }
     
     // Consultar extrato de transações

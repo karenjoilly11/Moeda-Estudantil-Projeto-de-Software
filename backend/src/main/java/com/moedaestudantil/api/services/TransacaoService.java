@@ -46,8 +46,17 @@ public class TransacaoService {
                             + " | Custo: " + vantagem.getCustoMoedas());
         }
 
+        if (vantagem.getEstoque() != null && vantagem.getEstoque() <= 0) {
+            throw new IllegalStateException("Vantagem sem estoque");
+        }
+
         aluno.setSaldoMoedas(aluno.getSaldoMoedas() - vantagem.getCustoMoedas());
         alunoRepository.save(aluno);
+
+        if (vantagem.getEstoque() != null) {
+            vantagem.setEstoque(vantagem.getEstoque() - 1);
+            vantagemRepository.save(vantagem);
+        }
 
         String codigoCupom = gerarCodigoCupom();
 
@@ -62,7 +71,7 @@ public class TransacaoService {
         transacao.setStatus(STATUS_PENDENTE);
         Transacao salva = transacaoRepository.save(transacao);
 
-        notificacaoService.notificarResgateAluno(aluno, vantagem, codigoCupom);
+        notificacaoService.notificarResgateAluno(aluno, vantagem, codigoCupom, aluno.getSaldoMoedas());
         notificacaoService.notificarResgateEmpresa(vantagem, aluno, codigoCupom);
 
         ResgateResponseDTO response = new ResgateResponseDTO();

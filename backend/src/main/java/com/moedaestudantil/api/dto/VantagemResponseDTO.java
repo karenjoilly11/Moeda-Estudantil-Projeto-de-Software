@@ -9,5 +9,9 @@ public class VantagemResponseDTO {
     private String descricao;
     private String foto;
     private Double custoMoedas;
+    private Integer estoque;
+    private String categoria;
     private String instituicaoNome;
+    private Long empresaId;
+    private Long instituicaoId;
 }

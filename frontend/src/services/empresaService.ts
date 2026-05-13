@@ -61,15 +61,18 @@ export const empresaService = {
    * GET /api/empresa/{id}/vantagens
    */
   listarVantagens: async (empresaId: number): Promise<Vantagem[]> => {
-    const response = await api.get<Array<{ id: number; nome: string; custoMoedas: number; descricao: string }>>(`/empresa/${empresaId}/vantagens`);
-    // Map response to Vantagem format
+    const response = await api.get<Vantagem[]>(`/empresa/${empresaId}/vantagens`);
     return response.map((item) => ({
       id: item.id,
       nome: item.nome,
       descricao: item.descricao,
-      foto: "",
+      foto: item.foto || "",
       custoMoedas: item.custoMoedas,
-      instituicaoNome: "",
+      estoque: item.estoque,
+      categoria: item.categoria,
+      instituicaoNome: item.instituicaoNome || "",
+      empresaId: item.empresaId,
+      instituicaoId: item.instituicaoId,
     }));
   },
 
