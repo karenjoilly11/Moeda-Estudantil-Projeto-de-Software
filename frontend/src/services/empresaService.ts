@@ -74,7 +74,7 @@ export const empresaService = {
   },
 
   removerVantagem: async (vantagemId: number): Promise<void> => {
-    await api.delete(`/vantagem/${vantagemId}`);
+    await api.del(`/vantagem/${vantagemId}`);
   },
 
   validarCupom: async (codigo: string): Promise<CupomValidacao> => {
@@ -114,7 +114,7 @@ export const empresaService = {
 },
   
   excluirConta: async (empresaId: number): Promise<void> => {
-    await api.delete(`/empresa/${empresaId}`);
+    await api.del(`/empresa/${empresaId}`);
     clearAuth();
   },
 };
