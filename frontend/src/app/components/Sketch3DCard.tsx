@@ -7,14 +7,21 @@ interface Sketch3DCardProps {
   onClick?: () => void;
   disabled?: boolean;
   intensity?: number; // 0-1, controla intensidade do efeito 3D
+  enable3D?: boolean; // controla se o efeito 3D esta ativo (default: false para dashboards)
 }
 
+/**
+ * Sketch3DCard - Card com efeito 3D opcional
+ * Por padrao, o efeito 3D esta DESATIVADO (estilo flat moderno)
+ * Use enable3D={true} apenas na tela de RoleSelection
+ */
 export function Sketch3DCard({ 
   children, 
   className = "", 
   onClick,
   disabled = false,
-  intensity = 1
+  intensity = 1,
+  enable3D = false // Por padrao, sem efeito 3D
 }: Sketch3DCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotateX, setRotateX] = useState(0);
@@ -25,7 +32,7 @@ export function Sketch3DCard({
   const maxShadowOffset = 12 * intensity;
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || disabled) return;
+    if (!cardRef.current || disabled || !enable3D) return;
 
     const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -50,10 +57,32 @@ export function Sketch3DCard({
     setIsHovered(true);
   };
 
-  // Calcular sombra dinamica baseada na rotacao
+  // Modo flat (sem 3D) - estilo moderno com sombra sutil
+  if (!enable3D) {
+    return (
+      <motion.div
+        ref={cardRef}
+        className={`bg-white border border-gray-200 p-4 ${onClick && !disabled ? 'cursor-pointer' : ''} ${disabled ? 'opacity-60' : ''} ${className}`}
+        style={{
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+        }}
+        whileHover={onClick && !disabled ? { 
+          y: -2,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        } : undefined}
+        whileTap={onClick && !disabled ? { scale: 0.98 } : undefined}
+        transition={{ duration: 0.2 }}
+        onClick={disabled ? undefined : onClick}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
+  // Modo 3D (apenas para RoleSelection)
   const shadowX = 5 + (rotateY / maxRotation) * maxShadowOffset;
   const shadowY = 5 + (-rotateX / maxRotation) * maxShadowOffset;
-  const shadowBlur = isHovered ? 0 : 0;
   
   return (
     <motion.div
@@ -68,7 +97,7 @@ export function Sketch3DCard({
         rotateX: rotateX,
         rotateY: rotateY,
         scale: isHovered && !disabled ? 1.02 : 1,
-        boxShadow: `${shadowX}px ${shadowY}px ${shadowBlur}px #000000`,
+        boxShadow: `${shadowX}px ${shadowY}px 0px #000000`,
       }}
       transition={{
         rotateX: { duration: 0.1, ease: "easeOut" },
@@ -89,18 +118,24 @@ export function Sketch3DCard({
   );
 }
 
-// Variante com destaque de brilho
+// Variante com destaque de brilho - agora tambem flat por padrao
 interface Sketch3DCardGlowProps extends Sketch3DCardProps {
   glowColor?: string;
 }
 
+/**
+ * Sketch3DCardGlow - Card com destaque
+ * Por padrao, usa estilo flat moderno (sem efeito 3D)
+ * Use enable3D={true} apenas na tela de RoleSelection
+ */
 export function Sketch3DCardGlow({ 
   children, 
   className = "", 
   onClick,
   disabled = false,
   intensity = 1,
-  glowColor = "#F2D06B"
+  glowColor = "#F2D06B",
+  enable3D = false // Por padrao, sem efeito 3D
 }: Sketch3DCardGlowProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotateX, setRotateX] = useState(0);
@@ -111,7 +146,7 @@ export function Sketch3DCardGlow({
   const maxRotation = 15 * intensity;
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || disabled) return;
+    if (!cardRef.current || disabled || !enable3D) return;
 
     const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -135,6 +170,30 @@ export function Sketch3DCardGlow({
     setIsHovered(false);
   };
 
+  // Modo flat (sem 3D) - estilo moderno com sombra sutil e borda destacada
+  if (!enable3D) {
+    return (
+      <motion.div
+        ref={cardRef}
+        className={`bg-white border border-gray-200 p-4 relative overflow-hidden ${onClick && !disabled ? 'cursor-pointer' : ''} ${disabled ? 'opacity-60' : ''} ${className}`}
+        style={{
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+        }}
+        whileHover={onClick && !disabled ? { 
+          y: -2,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        } : undefined}
+        whileTap={onClick && !disabled ? { scale: 0.98 } : undefined}
+        transition={{ duration: 0.2 }}
+        onClick={disabled ? undefined : onClick}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
+  // Modo 3D (apenas para RoleSelection)
   const shadowX = 5 + (rotateY / maxRotation) * 10;
   const shadowY = 5 + (-rotateX / maxRotation) * 10;
   

@@ -118,6 +118,16 @@ public class ProfessorService {
         return alunoRepository.findByInstituicaoId(professor.getInstituicao().getId());
     }
     
+    public List<Aluno> buscarAlunosPorNome(Long professorId, String nome) {
+    Professor professor = professorRepository.findById(professorId)
+            .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
+    
+    // Busca alunos da mesma instituição filtrando pelo nome (ignore case)
+    return alunoRepository.findByInstituicaoIdAndNomeContainingIgnoreCase(
+            professor.getInstituicao().getId(), 
+            nome
+    );
+    }
     
     
 

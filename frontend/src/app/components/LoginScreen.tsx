@@ -5,6 +5,7 @@ import { SketchCard } from "./SketchCard";
 import { SketchButton } from "./SketchButton";
 import { SketchInput } from "./SketchInput";
 import { useAuth } from "@/contexts/AuthContext";
+import { ApiError } from "@/lib/api";
 import type { UserRole } from "@/types/api";
 
 
@@ -70,8 +71,18 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess, onCadastroCl
     try {
       await login(email, senha, selectedRole);
       onLoginSuccess();
-    } catch (err: any) {
-      setErro(err?.message || "Falha no login. Verifique suas credenciais.");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setErro("Email ou senha incorretos.");
+        } else if (err.status === 404) {
+          setErro("Usuario nao encontrado.");
+        } else {
+          setErro(typeof err.body === 'string' ? err.body : "Falha no login. Verifique suas credenciais.");
+        }
+      } else {
+        setErro("Falha no login. Verifique suas credenciais.");
+      }
     } finally {
       setCarregando(false);
     }
@@ -96,9 +107,8 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess, onCadastroCl
               {/* Header */}
               <div className="flex items-center gap-3 mb-6">
                 <div
-                  className="w-12 h-12 border-[2.5px] border-black flex items-center justify-center"
+                  className="w-12 h-12 border border-gray-300 flex items-center justify-center rounded-full"
                   style={{
-                    borderRadius: "50% 45% 48% 52%",
                     backgroundColor: config.iconBg
                   }}
                 >
@@ -106,7 +116,7 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess, onCadastroCl
                 </div>
                 <div>
                   <h1
-                    className="text-2xl"
+                    className="text-2xl font-semibold"
                     style={{ fontFamily: "'Architects Daughter', cursive" }}
                   >
                     entrar como {config.title.toLowerCase()}
@@ -178,9 +188,8 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess, onCadastroCl
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-red-100 border-[2px] border-red-400 text-red-700 px-3 py-2 text-sm"
+                    className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 text-sm rounded-lg"
                     style={{
-                      borderRadius: "6px 8px 5px 7px",
                       fontFamily: "'Architects Daughter', cursive",
                     }}
                   >

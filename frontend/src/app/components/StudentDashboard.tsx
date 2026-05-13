@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Copy, Check } from "lucide-react";
-import { Sketch3DCard, Sketch3DCardGlow } from "./Sketch3DCard";
 import { SketchCard } from "./SketchCard";
 import { SketchButton } from "./SketchButton";
 import { SketchBadge } from "./SketchBadge";
 import { SketchInput } from './SketchInput';
+import { SketchEmptyState } from "./SketchEmptyState";
 import { Navbar } from "./Navbar";
 import { 
   SketchProductCardSkeleton, 
@@ -14,7 +14,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { alunoService } from "@/services/alunoService";
 import { transacaoService } from "@/services/transacaoService";
 import { useConfetti } from "@/hooks/useConfetti";
-import { User, Mail, MapPin, BookOpen, Lock, Save, X } from "lucide-react";
+import { User, Lock, X } from "lucide-react";
+import { ApiError } from "@/lib/api";
 import type {
   Aluno,
   Transacao,
@@ -95,19 +96,12 @@ const handleEditSubmit = async (e: React.FormEvent) => {
   setSalvando(true);
 
   try {
-    // 🔍 LOG ANTES DE ENVIAR
-    console.log("📤 Dados do formulário:", editForm);
-    console.log("📤 Aluno atual:", aluno);
-    console.log("📤 ID do aluno:", aluno.id);
-    
     const response = await alunoService.atualizarPerfil({
       nome: editForm.nome,
       email: editForm.email,
       endereco: editForm.endereco,
       curso: editForm.curso,
     });
-    
-    console.log("✅ Resposta do servidor:", response);
     
     // Atualiza o localStorage com os novos dados
     const alunoAtualizado = { ...aluno, ...editForm };
@@ -121,9 +115,6 @@ const handleEditSubmit = async (e: React.FormEvent) => {
       window.location.reload();
     }, 1500);
   } catch (err: any) {
-    console.error("❌ Erro completo:", err);
-    console.error("❌ Response data:", err.response?.data);
-    console.error("❌ Response status:", err.response?.status);
     setEditError(err.response?.data || err?.message || "Erro ao atualizar perfil");
   } finally {
     setSalvando(false);
@@ -269,21 +260,21 @@ const handleEditSubmit = async (e: React.FormEvent) => {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2">
-          {/* Greeting Card */} 
+          {/* Greeting Card - Modern Flat Style */} 
 
 <motion.div
   initial={{ y: 20, opacity: 0 }}
   animate={{ y: 0, opacity: 1 }}
   className="mb-6"
 >
-  <Sketch3DCardGlow glowColor="#F2D06B">
+  <SketchCard className="p-4 sm:p-6">
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div>
         <h1
-          className="text-2xl sm:text-3xl mb-2"
+          className="text-2xl sm:text-3xl mb-2 font-semibold"
           style={{ fontFamily: "'Architects Daughter', cursive" }}
         >
-          Olá, {aluno.nome.split(" ")[0]}!
+          Ola, {aluno.nome.split(" ")[0]}!
         </h1>
         <p
           className="text-sm text-gray-600 italic"
@@ -304,7 +295,7 @@ const handleEditSubmit = async (e: React.FormEvent) => {
         </motion.div>
         <button
           onClick={() => setEditando(true)}
-          className="p-2 hover:bg-white/20 rounded-full transition-colors"
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           title="Editar perfil"
         >
           <User size={20} />
@@ -317,13 +308,13 @@ const handleEditSubmit = async (e: React.FormEvent) => {
     >
       seu saldo atual de moedas
     </p>
-  </Sketch3DCardGlow>
+  </SketchCard>
 </motion.div>
 
           {/* Vitrine Section */}
           <div className="mb-4">
             <h2
-              className="text-xl sm:text-2xl mb-4"
+              className="text-xl sm:text-2xl mb-4 font-semibold"
               style={{ fontFamily: "'Architects Daughter', cursive" }}
             >
               vitrine de vantagens
@@ -341,9 +332,9 @@ const handleEditSubmit = async (e: React.FormEvent) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="buscar vantagens..."
-                  className="w-full pl-10 pr-4 py-3 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 outline-none focus:ring-2 focus:ring-[#F2D06B] focus:border-transparent"
                   style={{
-                    borderRadius: "8px 12px 6px 10px",
+                    borderRadius: "8px",
                     fontFamily: "'Architects Daughter', cursive",
                   }}
                 />
@@ -362,16 +353,15 @@ const handleEditSubmit = async (e: React.FormEvent) => {
             {/* Empty State */}
             {!carregandoVantagens && filteredRewards.length === 0 && (
               <SketchCard className="text-center py-8">
-                <p
-                  className="text-gray-500 italic"
-                  style={{ fontFamily: "'Architects Daughter', cursive" }}
-                >
-                  nenhuma vantagem encontrada
-                </p>
+                <SketchEmptyState 
+                  variant="rewards"
+                  title="nenhuma vantagem encontrada"
+                  description="novas vantagens serao exibidas aqui"
+                />
               </SketchCard>
             )}
 
-            {/* Rewards Grid */}
+            {/* Rewards Grid - Modern Flat Cards */}
             {!carregandoVantagens && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filteredRewards.map((reward, index) => {
@@ -383,20 +373,19 @@ const handleEditSubmit = async (e: React.FormEvent) => {
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: index * 0.05 }}
                     >
-                      <Sketch3DCard
+                      <SketchCard 
+                        className={`p-4 ${semSaldo ? 'opacity-60' : 'cursor-pointer hover:shadow-md transition-shadow'}`}
                         onClick={semSaldo ? undefined : () => setSelectedReward(reward)}
-                        disabled={semSaldo}
-                        intensity={0.8}
                       >
                         <div
-                          className="w-full h-28 sm:h-32 bg-gradient-to-br from-[#F5F2E9] to-[#e8e3d4] border-[2px] border-black mb-3 flex items-center justify-center text-4xl sm:text-5xl"
-                          style={{ borderRadius: "6px 8px 5px 7px" }}
+                          className="w-full h-28 sm:h-32 bg-gradient-to-br from-[#F5F2E9] to-[#e8e3d4] border border-gray-200 mb-3 flex items-center justify-center text-4xl sm:text-5xl"
+                          style={{ borderRadius: "6px" }}
                         >
                           {emojiVantagem(reward.nome)}
                         </div>
 
                         <h3
-                          className="font-medium mb-1 line-clamp-1"
+                          className="font-semibold mb-1 line-clamp-1"
                           style={{ fontFamily: "'Architects Daughter', cursive" }}
                         >
                           {reward.nome}
@@ -424,7 +413,7 @@ const handleEditSubmit = async (e: React.FormEvent) => {
                             {semSaldo ? "sem saldo" : "resgatar"}
                           </SketchButton>
                         </div>
-                      </Sketch3DCard>
+                      </SketchCard>
                     </motion.div>
                   );
                 })}
@@ -441,7 +430,7 @@ const handleEditSubmit = async (e: React.FormEvent) => {
             transition={{ delay: 0.2 }}
           >
             <h2
-              className="text-xl sm:text-2xl mb-4"
+              className="text-xl sm:text-2xl mb-4 font-semibold"
               style={{ fontFamily: "'Architects Daughter', cursive" }}
             >
               extrato
@@ -451,12 +440,11 @@ const handleEditSubmit = async (e: React.FormEvent) => {
               {carregandoExtrato && <SketchListSkeleton count={5} />}
 
               {!carregandoExtrato && extrato.length === 0 && (
-                <p
-                  className="text-sm text-gray-500 italic text-center py-4"
-                  style={{ fontFamily: "'Architects Daughter', cursive" }}
-                >
-                  nenhuma transacao registrada ainda
-                </p>
+                <SketchEmptyState 
+                  variant="history"
+                  title="nenhuma transacao ainda"
+                  description="seu historico de transacoes aparecera aqui"
+                />
               )}
 
               {!carregandoExtrato && extrato.length > 0 && (
@@ -474,16 +462,15 @@ const handleEditSubmit = async (e: React.FormEvent) => {
                         <div
                           className={`w-10 h-10 ${
                             isCredito ? "bg-[#F2D06B]" : "bg-gray-200"
-                          } border-[2px] border-black flex items-center justify-center flex-shrink-0`}
-                          style={{ borderRadius: "50% 45% 48% 52%" }}
+                          } border border-gray-300 flex items-center justify-center flex-shrink-0 rounded-full`}
                         >
-                          <span className="text-xl">{isCredito ? "+" : "-"}</span>
+                          <span className="text-xl font-semibold">{isCredito ? "+" : "-"}</span>
                         </div>
 
                         <div className="flex-1 min-w-0">
                           {isCredito && trans.professorNome && (
                             <p
-                              className="font-medium text-sm"
+                              className="font-semibold text-sm"
                               style={{ fontFamily: "'Architects Daughter', cursive" }}
                             >
                               {trans.professorNome}
@@ -510,7 +497,7 @@ const handleEditSubmit = async (e: React.FormEvent) => {
                         </div>
 
                         <div
-                          className={`font-medium flex-shrink-0 ${
+                          className={`font-semibold flex-shrink-0 ${
                             isCredito ? "text-green-600" : "text-gray-600"
                           }`}
                           style={{ fontFamily: "'Architects Daughter', cursive" }}

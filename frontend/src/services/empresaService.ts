@@ -48,11 +48,37 @@ export const empresaService = {
     if (!raw) return null;
     try { return JSON.parse(raw) as Empresa; } catch { return null; }
   },
+
+  /**
+   * Busca os dados da empresa
+   * GET /api/empresa/{id}
+   */
+  buscarDados: (empresaId: number) =>
+    api.get<Empresa>(`/empresa/${empresaId}`),
+
   /**
    * Lista todas as vantagens da empresa
+   * GET /api/empresa/{id}/vantagens
    */
-  listarVantagens: (empresaId: number) =>
-    api.get<Vantagem[]>(`/empresa/${empresaId}/vantagens`),
+  listarVantagens: async (empresaId: number): Promise<Vantagem[]> => {
+    const response = await api.get<Array<{ id: number; nome: string; custoMoedas: number; descricao: string }>>(`/empresa/${empresaId}/vantagens`);
+    // Map response to Vantagem format
+    return response.map((item) => ({
+      id: item.id,
+      nome: item.nome,
+      descricao: item.descricao,
+      foto: "",
+      custoMoedas: item.custoMoedas,
+      instituicaoNome: "",
+    }));
+  },
+
+  /**
+   * Lista cupons da empresa
+   * GET /api/empresa/{id}/cupons
+   */
+  listarCupons: (empresaId: number) =>
+    api.get<CupomValidacao[]>(`/empresa/${empresaId}/cupons`),
 
   /**
    * Cria uma nova vantagem
@@ -83,16 +109,4 @@ export const empresaService = {
    */
   utilizarCupom: (codigo: string) =>
     api.post<CupomValidacao>(`/transacao/utilizar/${encodeURIComponent(codigo)}`, {}),
-
-  /**
-   * Busca os dados atualizados da empresa
-   */
-  buscarDados: (empresaId: number) =>
-    api.get<Empresa>(`/empresa/${empresaId}`),
-
-  /**
-   * Lista histórico de cupons utilizados pela empresa
-   */
-  listarCuponsUtilizados: (empresaId: number) =>
-    api.get<CupomValidacao[]>(`/empresa/${empresaId}/cupons`),
 };

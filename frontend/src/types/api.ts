@@ -7,6 +7,7 @@ export interface Aluno {
   nome: string;
   email: string;
   curso: string;
+  endereco?: string;
   instituicaoNome: string;
   saldoMoedas: number;
 }

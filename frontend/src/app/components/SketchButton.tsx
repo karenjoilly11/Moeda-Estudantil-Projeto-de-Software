@@ -6,34 +6,35 @@ interface SketchButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
+/**
+ * SketchButton - Botao com estilo "Modern Flat"
+ * Bordas sutis, sombras suaves, alto contraste
+ */
 export function SketchButton({ variant = "primary", children, className = "", disabled, ...props }: SketchButtonProps) {
-  const baseClasses = "px-6 py-3 font-medium transition-all duration-150 relative";
+  const baseClasses = "px-6 py-3 font-semibold transition-all duration-150 relative rounded-lg";
 
   const variantClasses = {
-    primary: "bg-[#1A1A1A] text-white border-[2.5px] border-black shadow-[5px_5px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] active:shadow-none active:translate-x-[5px] active:translate-y-[5px]",
-    outline: "bg-white text-[#1A1A1A] border-[2.5px] border-black shadow-[5px_5px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] active:shadow-none active:translate-x-[5px] active:translate-y-[5px]",
-    ghost: "bg-transparent text-[#1A1A1A] border-[2.5px] border-transparent hover:border-black"
+    primary: "bg-[#1A1A1A] text-white border border-gray-900 shadow-sm hover:bg-[#2A2A2A] hover:shadow-md active:shadow-none",
+    outline: "bg-white text-[#1A1A1A] border border-gray-300 shadow-sm hover:bg-gray-50 hover:shadow-md active:shadow-none",
+    ghost: "bg-transparent text-[#1A1A1A] border border-transparent hover:bg-gray-100"
   };
 
   const disabledClasses = disabled 
-    ? "opacity-50 cursor-not-allowed hover:shadow-[5px_5px_0px_#000000] active:shadow-[5px_5px_0px_#000000] active:translate-x-0 active:translate-y-0" 
+    ? "opacity-50 cursor-not-allowed hover:shadow-sm" 
     : "";
 
   return (
     <motion.button
       className={`${baseClasses} ${variantClasses[variant]} ${disabledClasses} ${className}`}
       style={{
-        borderRadius: "8px 12px 6px 10px",
         fontFamily: "'Architects Daughter', cursive"
       }}
       whileHover={!disabled ? { 
         scale: 1.02,
-        rotateZ: 0.5,
         transition: { duration: 0.15 }
       } : undefined}
       whileTap={!disabled ? { 
-        scale: 0.95,
-        rotateZ: -0.5,
+        scale: 0.98,
         transition: { duration: 0.1 }
       } : undefined}
       disabled={disabled}

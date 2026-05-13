@@ -85,5 +85,17 @@ public class ProfessorController {
         // Busca professor por email
         return professorService.findByEmail(email).getId();
     }
+
+    @GetMapping("/alunos/busca")
+    public ResponseEntity<?> buscarAlunos(@RequestHeader("Authorization") String token, 
+                                        @RequestParam String nome) {
+        try {
+            Long professorId = extractProfessorIdFromToken(token);
+            return ResponseEntity.ok(professorService.buscarAlunosPorNome(professorId, nome));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }
 

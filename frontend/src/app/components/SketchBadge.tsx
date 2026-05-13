@@ -8,18 +8,21 @@ interface SketchBadgeProps {
   className?: string;
 }
 
+/**
+ * SketchBadge - Badge com estilo "Modern Flat"
+ * Bordas sutis, cores vibrantes
+ */
 export function SketchBadge({ children, variant = "gold", icon = false, className = "" }: SketchBadgeProps) {
   const variantClasses = {
-    gold: "bg-[#F2D06B] text-[#1A1A1A] border-[2px] border-black",
-    black: "bg-[#1A1A1A] text-white border-[2px] border-black",
-    white: "bg-white text-[#1A1A1A] border-[2px] border-black"
+    gold: "bg-[#F2D06B] text-[#1A1A1A] border border-amber-400",
+    black: "bg-[#1A1A1A] text-white border border-gray-700",
+    white: "bg-white text-[#1A1A1A] border border-gray-300"
   };
 
   return (
     <div
-      className={`inline-flex items-center gap-2 px-3 py-1 ${variantClasses[variant]} ${className}`}
+      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full font-semibold ${variantClasses[variant]} ${className}`}
       style={{
-        borderRadius: "6px 8px 5px 7px",
         fontFamily: "'Architects Daughter', cursive"
       }}
     >

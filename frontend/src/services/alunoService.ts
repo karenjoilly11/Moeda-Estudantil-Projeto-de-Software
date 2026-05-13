@@ -6,8 +6,7 @@ export const alunoService = {
     const resp = await api.post<LoginResponse>("/aluno/login", { email, senha });
     setToken(resp.token);
     setRole('aluno');
-    console.log("✅ Aluno logado:", resp.aluno);
-setStoredUser(resp.aluno);
+    setStoredUser(resp.aluno);
     return resp.aluno;
   },
 
@@ -41,11 +40,11 @@ setStoredUser(resp.aluno);
   const aluno = getStoredUser<Aluno>();
   
   if (!aluno?.id) {
-    throw new Error("ID do aluno não encontrado");
+    throw new Error("ID do aluno nao encontrado");
   }
   
-  const response = await api.put(`/aluno/perfil/${aluno.id}`, dados);
-  return response.data;
+  const response = await api.put<Aluno>(`/aluno/perfil/${aluno.id}`, dados);
+  return response;
 },
 
   /**

@@ -1,16 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Coins, RefreshCw } from "lucide-react";
 import { SketchCard } from "./SketchCard";
-import { Sketch3DCardGlow } from "./Sketch3DCard";
 import { SketchButton } from "./SketchButton";
 import { SketchBadge } from "./SketchBadge";
 import { SketchListSkeleton } from "./SketchSkeleton";
+import { SketchEmptyState } from "./SketchEmptyState";
 import { Navbar } from "./Navbar";
 import { motion } from "motion/react";
 import { professorService } from "@/services/professorService";
 import { useProfessor } from "@/contexts/AuthContext";
 import { useConfetti } from "@/hooks/useConfetti";
 import type { Professor, AlunoResumo, Transacao } from "@/types/api";
+import { ApiError } from "@/lib/api";
 
 interface ProfessorDashboardProps {
   professor: Professor;
@@ -19,12 +20,12 @@ interface ProfessorDashboardProps {
 
 export function ProfessorDashboard({ professor: initialProfessor, onLogout }: ProfessorDashboardProps) {
   const { updateProfessor } = useProfessor();
-  const { fireGoldCoins, fireSuccess } = useConfetti();
+  const { fireGoldCoins } = useConfetti();
   
   // Estado local do professor (pode ser atualizado apos envio de moedas)
   const [professor, setProfessor] = useState<Professor>(initialProfessor);
   
-  // Estados de dados
+  // Estados de dados - ZERO MOCK: inicializados como arrays vazios
   const [students, setStudents] = useState<AlunoResumo[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transacao[]>([]);
   
@@ -41,23 +42,31 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Ref para debounce
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
   const quickAmounts = [5, 10, 20, 30, 50];
 
-  // Carregar historico de transacoes
+  // Carregar extrato do professor
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true);
     try {
-      const history = await professorService.listarHistorico(professor.id);
+      const history = await professorService.listarExtrato();
       setRecentTransactions(history.slice(0, 5)); // Ultimas 5
     } catch (err) {
-      // Mantem dados vazios como fallback
+      // ZERO MOCK: manter array vazio em caso de erro
       setRecentTransactions([]);
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setError("Sessao expirada. Faca login novamente.");
+        }
+      }
     } finally {
       setLoadingHistory(false);
     }
-  }, [professor.id]);
+  }, []);
 
-  // Buscar alunos
+  // Buscar alunos com debounce de 300ms
   const searchStudents = useCallback(async (query: string) => {
     if (!query.trim()) {
       setStudents([]);
@@ -65,26 +74,44 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
     }
     
     setLoadingStudents(true);
+    setError(null);
+    
     try {
-      const results = await professorService.buscarAlunos(professor.id, query);
+      const results = await professorService.buscarAlunos(query);
       setStudents(results);
     } catch (err) {
-      // Fallback: dados mockados para demo
-      setStudents([
-        { id: 1, nome: "Marina Souza", email: "marina@puc.br", curso: "Eng. Computacao" },
-        { id: 2, nome: "Marcos Rocha", email: "marcos@puc.br", curso: "Eng. Computacao" },
-      ].filter(s => s.nome.toLowerCase().includes(query.toLowerCase())));
+      // ZERO MOCK: nao usar fallback com dados mockados
+      setStudents([]);
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setError("Sessao expirada. Faca login novamente.");
+        } else if (err.status === 404) {
+          // 404 e aceitavel - nenhum aluno encontrado
+          setStudents([]);
+        } else {
+          setError("Erro ao buscar alunos. Tente novamente.");
+        }
+      }
     } finally {
       setLoadingStudents(false);
     }
-  }, [professor.id]);
+  }, []);
 
-  // Debounce da busca
+  // Debounce da busca (300ms)
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
+    debounceRef.current = setTimeout(() => {
       searchStudents(searchQuery);
     }, 300);
-    return () => clearTimeout(timer);
+    
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
   }, [searchQuery, searchStudents]);
 
   // Carregar historico inicial
@@ -131,8 +158,18 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
       
       // Limpar mensagem de sucesso apos 3s
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err: any) {
-      setError(err?.message || "Erro ao enviar moedas. Tente novamente.");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setError("Sessao expirada. Faca login novamente.");
+        } else if (err.status === 404) {
+          setError("Aluno nao encontrado.");
+        } else {
+          setError(typeof err.body === 'string' ? err.body : "Erro ao enviar moedas. Tente novamente.");
+        }
+      } else {
+        setError("Erro ao enviar moedas. Tente novamente.");
+      }
     } finally {
       setSendingCoins(false);
     }
@@ -162,7 +199,7 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
         onLogout={onLogout}
       />
 
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
         {/* Greeting */}
         <motion.div
@@ -170,7 +207,7 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
           animate={{ y: 0, opacity: 1 }}
           className="mb-6"
         >
-          <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+          <h1 className="text-2xl sm:text-3xl mb-2 font-semibold" style={{ fontFamily: "'Architects Daughter', cursive" }}>
             Ola, Prof. {professor.nome.split(' ')[0]}
           </h1>
           <p className="text-sm text-gray-600 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
@@ -181,249 +218,246 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main - Nova Distribuicao */}
           <div className="lg:col-span-2">
-            <h2 className="text-xl sm:text-2xl mb-4" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+            <h2 className="text-xl sm:text-2xl mb-4 font-semibold" style={{ fontFamily: "'Architects Daughter', cursive" }}>
               nova distribuicao
             </h2>
 
-            <Sketch3DCardGlow glowColor="#1A1A1A" intensity={0.5}>
-              <div className="p-2 sm:p-4">
-                {/* Balance Progress */}
-                <div className="mb-6">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
-                    <span className="text-sm italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                      saldo semestre - 2026.1
-                    </span>
-                    <SketchBadge variant="gold" icon>
-                      {professor.saldoMoedas} disponiveis
-                    </SketchBadge>
-                  </div>
-
-                  {/* Custom Progress Bar */}
-                  <div className="w-full h-6 bg-[#F5F2E9] border-[2.5px] border-black relative overflow-hidden"
-                       style={{ borderRadius: "6px 8px 5px 7px" }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (professor.saldoMoedas / 1000) * 100)}%` }}
-                      transition={{ duration: 1, ease: "easeOut" }}
-                      className="h-full bg-[#F2D06B]"
-                    />
-                  </div>
+            {/* Card flat sem efeito 3D */}
+            <SketchCard className="p-4 sm:p-6">
+              {/* Balance Progress */}
+              <div className="mb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
+                  <span className="text-sm italic font-medium" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                    saldo semestre - 2026.1
+                  </span>
+                  <SketchBadge variant="gold" icon>
+                    {professor.saldoMoedas} disponiveis
+                  </SketchBadge>
                 </div>
 
-                {/* Success message */}
-                {successMessage && (
+                {/* Custom Progress Bar */}
+                <div className="w-full h-6 bg-[#F5F2E9] border-[2px] border-black relative overflow-hidden"
+                     style={{ borderRadius: "6px 8px 5px 7px" }}>
                   <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="mb-4 bg-green-100 border-[2px] border-green-400 text-green-700 px-4 py-3 text-sm"
-                    style={{
-                      borderRadius: "6px 8px 5px 7px",
-                      fontFamily: "'Architects Daughter', cursive",
-                    }}
-                  >
-                    {successMessage}
-                  </motion.div>
-                )}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, (professor.saldoMoedas / 1000) * 100)}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full bg-[#F2D06B]"
+                  />
+                </div>
+              </div>
 
-                {/* Error message */}
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 bg-red-100 border-[2px] border-red-400 text-red-700 px-3 py-2 text-sm"
-                    style={{
-                      borderRadius: "6px 8px 5px 7px",
-                      fontFamily: "'Architects Daughter', cursive",
-                    }}
-                  >
-                    ! {error}
-                  </motion.div>
-                )}
+              {/* Success message */}
+              {successMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="mb-4 bg-green-100 border-[2px] border-green-400 text-green-700 px-4 py-3 text-sm"
+                  style={{
+                    borderRadius: "6px 8px 5px 7px",
+                    fontFamily: "'Architects Daughter', cursive",
+                  }}
+                >
+                  {successMessage}
+                </motion.div>
+              )}
 
-                {/* Step 1: Para Quem */}
-                <div className="mb-6">
-                  <h3 className="text-base sm:text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    1 - PARA QUEM?
-                  </h3>
+              {/* Error message */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 bg-red-100 border-[2px] border-red-400 text-red-700 px-3 py-2 text-sm"
+                  style={{
+                    borderRadius: "6px 8px 5px 7px",
+                    fontFamily: "'Architects Daughter', cursive",
+                  }}
+                >
+                  ! {error}
+                </motion.div>
+              )}
 
-                  {selectedStudent ? (
-                    <SketchCard className="p-4 bg-[#F2D06B]/20">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2px] border-black rounded-full flex items-center justify-center"
-                               style={{ borderRadius: "50% 45% 48% 52%", fontFamily: "'Architects Daughter', cursive" }}>
-                            {selectedStudent.nome.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm sm:text-base" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                              {selectedStudent.nome}
-                            </p>
-                            <p className="text-xs text-gray-600" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                              {selectedStudent.curso}
-                            </p>
-                          </div>
+              {/* Step 1: Para Quem */}
+              <div className="mb-6">
+                <h3 className="text-base sm:text-lg mb-3 italic font-semibold" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                  1 - PARA QUEM?
+                </h3>
+
+                {selectedStudent ? (
+                  <SketchCard className="p-4 bg-[#F2D06B]/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2px] border-black rounded-full flex items-center justify-center"
+                             style={{ borderRadius: "50% 45% 48% 52%", fontFamily: "'Architects Daughter', cursive" }}>
+                          {selectedStudent.nome.charAt(0)}
                         </div>
-                        <button
-                          onClick={() => setSelectedStudent(null)}
-                          className="text-sm underline"
-                          style={{ fontFamily: "'Architects Daughter', cursive" }}
-                        >
-                          trocar
-                        </button>
+                        <div>
+                          <p className="font-semibold text-sm sm:text-base" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                            {selectedStudent.nome}
+                          </p>
+                          <p className="text-xs text-gray-600" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                            {selectedStudent.email}
+                          </p>
+                        </div>
                       </div>
-                    </SketchCard>
-                  ) : (
-                    <div>
-                      <div className="relative mb-3">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                          type="text"
-                          placeholder="digite nome ou email..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
-                          style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
-                        />
-                      </div>
-
-                      {loadingStudents && (
-                        <div className="border-[2.5px] border-black bg-white p-4" style={{ borderRadius: "6px 8px 5px 7px" }}>
-                          <SketchListSkeleton count={2} />
-                        </div>
-                      )}
-
-                      {!loadingStudents && searchQuery && students.length > 0 && (
-                        <div className="border-[2.5px] border-black bg-white"
-                             style={{ borderRadius: "6px 8px 5px 7px" }}>
-                          {students.map((student) => (
-                            <button
-                              key={student.id}
-                              onClick={() => {
-                                setSelectedStudent(student);
-                                setSearchQuery("");
-                              }}
-                              className="w-full p-3 hover:bg-[#F5F2E9] text-left border-b border-gray-200 last:border-0 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-[#F5F2E9] border-[2px] border-black rounded-full flex items-center justify-center flex-shrink-0"
-                                     style={{ borderRadius: "50% 45% 48% 52%", fontFamily: "'Architects Daughter', cursive" }}>
-                                  {student.nome.charAt(0)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm truncate" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                                    {student.nome}
-                                  </p>
-                                  <p className="text-xs text-gray-600 truncate" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                                    {student.email} - {student.curso}
-                                  </p>
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {!loadingStudents && searchQuery && students.length === 0 && (
-                        <p className="text-sm text-gray-500 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                          nenhum aluno encontrado
-                        </p>
-                      )}
+                      <button
+                        onClick={() => setSelectedStudent(null)}
+                        className="text-sm underline"
+                        style={{ fontFamily: "'Architects Daughter', cursive" }}
+                      >
+                        trocar
+                      </button>
                     </div>
-                  )}
-                </div>
-
-                {/* Step 2: Quantas Moedas */}
-                <div className="mb-6">
-                  <h3 className="text-base sm:text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    2 - QUANTAS MOEDAS?
-                  </h3>
-
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                    <button
-                      onClick={() => setAmount(Math.max(5, amount - 5))}
-                      className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2.5px] border-black flex items-center justify-center hover:bg-[#F5F2E9] transition-colors"
-                      style={{ borderRadius: "6px 8px 5px 7px" }}
-                    >
-                      <span className="text-xl sm:text-2xl leading-none">-</span>
-                    </button>
-
-                    <div className="flex-1 relative">
-                      <Coins className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-[#F2D06B]" size={20} />
+                  </SketchCard>
+                ) : (
+                  <div>
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                       <input
-                        type="number"
-                        aria-label="quantidade de moedas"
-                        value={amount}
-                        onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-full text-center text-2xl sm:text-3xl py-3 pl-10 sm:pl-12 pr-4 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
+                        type="text"
+                        placeholder="digite nome ou email..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-white border-[2px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
                         style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
                       />
                     </div>
 
-                    <button
-                      onClick={() => setAmount(amount + 5)}
-                      className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2.5px] border-black flex items-center justify-center hover:bg-[#F5F2E9] transition-colors"
-                      style={{ borderRadius: "6px 8px 5px 7px" }}
-                    >
-                      <span className="text-xl sm:text-2xl leading-none">+</span>
-                    </button>
+                    {loadingStudents && (
+                      <div className="border-[2px] border-black bg-white p-4" style={{ borderRadius: "6px 8px 5px 7px" }}>
+                        <SketchListSkeleton count={2} />
+                      </div>
+                    )}
+
+                    {!loadingStudents && searchQuery && students.length > 0 && (
+                      <div className="border-[2px] border-black bg-white"
+                           style={{ borderRadius: "6px 8px 5px 7px" }}>
+                        {students.map((student) => (
+                          <button
+                            key={student.id}
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              setSearchQuery("");
+                            }}
+                            className="w-full p-3 hover:bg-[#F5F2E9] text-left border-b border-gray-200 last:border-0 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-[#F5F2E9] border-[2px] border-black rounded-full flex items-center justify-center flex-shrink-0"
+                                   style={{ borderRadius: "50% 45% 48% 52%", fontFamily: "'Architects Daughter', cursive" }}>
+                                {student.nome.charAt(0)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm truncate" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                                  {student.nome}
+                                </p>
+                                <p className="text-xs text-gray-600 truncate" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                                  {student.email}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {!loadingStudents && searchQuery && students.length === 0 && (
+                      <p className="text-sm text-gray-500 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                        nenhum aluno encontrado
+                      </p>
+                    )}
                   </div>
-
-                  <div className="flex gap-2 flex-wrap">
-                    {quickAmounts.map(value => (
-                      <button
-                        key={value}
-                        aria-label={`definir ${value} moedas`}
-                        onClick={() => setAmount(value)}
-                        className={`px-3 sm:px-4 py-2 border-[2.5px] border-black transition-all text-sm sm:text-base ${
-                          amount === value
-                            ? 'bg-[#1A1A1A] text-white'
-                            : 'bg-white text-[#1A1A1A] hover:bg-[#F2D06B]'
-                        }`}
-                        style={{ borderRadius: "6px 8px 5px 7px", fontFamily: "'Architects Daughter', cursive" }}
-                      >
-                        {value}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Step 3: Por Que */}
-                <div className="mb-6">
-                  <h3 className="text-base sm:text-lg mb-3 italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    3 - POR QUE? <span className="text-xs">(obrigatorio)</span>
-                  </h3>
-
-                  <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-
-                    aria-label="Motivo do envio"
-                    placeholder="excelente apresentação no seminário — clareza e domínio do tema!"
-
-                    rows={3}
-                    className="w-full px-4 py-3 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B] resize-none"
-                    style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <SketchButton
-                  variant="primary"
-                  className="w-full text-base sm:text-lg py-4"
-                  onClick={handleSend}
-                  disabled={!selectedStudent || amount === 0 || !reason.trim() || sendingCoins || amount > professor.saldoMoedas}
-                >
-                  {sendingCoins ? "enviando..." : `enviar moedas para ${selectedStudent?.nome.split(' ')[0] || '...'}`}
-                </SketchButton>
-
-                {amount > professor.saldoMoedas && (
-                  <p className="text-xs text-center text-red-500 mt-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    saldo insuficiente
-                  </p>
                 )}
               </div>
-            </Sketch3DCardGlow>
+
+              {/* Step 2: Quantas Moedas */}
+              <div className="mb-6">
+                <h3 className="text-base sm:text-lg mb-3 italic font-semibold" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                  2 - QUANTAS MOEDAS?
+                </h3>
+
+                <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                  <button
+                    onClick={() => setAmount(Math.max(5, amount - 5))}
+                    className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2px] border-black flex items-center justify-center hover:bg-[#F5F2E9] transition-colors"
+                    style={{ borderRadius: "6px 8px 5px 7px" }}
+                  >
+                    <span className="text-xl sm:text-2xl leading-none">-</span>
+                  </button>
+
+                  <div className="flex-1 relative">
+                    <Coins className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-[#F2D06B]" size={20} />
+                    <input
+                      type="number"
+                      aria-label="quantidade de moedas"
+                      value={amount}
+                      onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full text-center text-2xl sm:text-3xl py-3 pl-10 sm:pl-12 pr-4 bg-white border-[2px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B]"
+                      style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => setAmount(amount + 5)}
+                    className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-[2px] border-black flex items-center justify-center hover:bg-[#F5F2E9] transition-colors"
+                    style={{ borderRadius: "6px 8px 5px 7px" }}
+                  >
+                    <span className="text-xl sm:text-2xl leading-none">+</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
+                  {quickAmounts.map(value => (
+                    <button
+                      key={value}
+                      aria-label={`definir ${value} moedas`}
+                      onClick={() => setAmount(value)}
+                      className={`px-3 sm:px-4 py-2 border-[2px] border-black transition-all text-sm sm:text-base ${
+                        amount === value
+                          ? 'bg-[#1A1A1A] text-white'
+                          : 'bg-white text-[#1A1A1A] hover:bg-[#F2D06B]'
+                      }`}
+                      style={{ borderRadius: "6px 8px 5px 7px", fontFamily: "'Architects Daughter', cursive" }}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step 3: Por Que */}
+              <div className="mb-6">
+                <h3 className="text-base sm:text-lg mb-3 italic font-semibold" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                  3 - POR QUE? <span className="text-xs font-normal">(obrigatorio)</span>
+                </h3>
+
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  aria-label="Motivo do envio"
+                  placeholder="excelente apresentacao no seminario - clareza e dominio do tema!"
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white border-[2px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B] resize-none"
+                  style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <SketchButton
+                variant="primary"
+                className="w-full text-base sm:text-lg py-4"
+                onClick={handleSend}
+                disabled={!selectedStudent || amount === 0 || !reason.trim() || sendingCoins || amount > professor.saldoMoedas}
+              >
+                {sendingCoins ? "enviando..." : `enviar moedas para ${selectedStudent?.nome.split(' ')[0] || '...'}`}
+              </SketchButton>
+
+              {amount > professor.saldoMoedas && (
+                <p className="text-xs text-center text-red-500 mt-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                  saldo insuficiente
+                </p>
+              )}
+            </SketchCard>
           </div>
 
           {/* Sidebar - Historico */}
@@ -434,7 +468,7 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
               transition={{ delay: 0.2 }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl sm:text-2xl" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                <h2 className="text-xl sm:text-2xl font-semibold" style={{ fontFamily: "'Architects Daughter', cursive" }}>
                   historico de envios
                 </h2>
                 <motion.button 
@@ -462,7 +496,7 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
                         className="pb-4 border-b border-gray-200 last:border-0"
                       >
                         <div className="flex items-start justify-between mb-1">
-                          <p className="font-medium text-sm" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                          <p className="font-semibold text-sm" style={{ fontFamily: "'Architects Daughter', cursive" }}>
                             {trans.alunoNome || "Aluno"}
                           </p>
                           <SketchBadge variant="gold" className="text-xs px-2 py-0.5">
@@ -481,9 +515,11 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic text-center py-4" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                    nenhuma distribuicao ainda
-                  </p>
+                  <SketchEmptyState 
+                    variant="history" 
+                    title="nenhum envio ainda"
+                    description="seus envios de moedas aparecerao aqui"
+                  />
                 )}
               </SketchCard>
             </motion.div>

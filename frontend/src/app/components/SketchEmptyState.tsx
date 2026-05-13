@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 
 interface SketchEmptyStateProps {
-  variant: "coins" | "transactions" | "rewards" | "students" | "search" | "generic";
+  variant: "coins" | "transactions" | "rewards" | "students" | "search" | "generic" | "history";
   title?: string;
   description?: string;
   className?: string;
@@ -219,6 +219,40 @@ const EmptyIllustrations = {
         transition={{ duration: 1, repeat: Infinity, delay: 0.6 }}
       />
     </svg>
+  ),
+
+  history: () => (
+    <svg width="120" height="100" viewBox="0 0 120 100" fill="none" className="mx-auto">
+      {/* Relogio/historico */}
+      <motion.circle
+        cx="60" cy="50" r="30"
+        fill="white"
+        stroke="#1A1A1A"
+        strokeWidth="2.5"
+        initial={{ scale: 1 }}
+        animate={{ scale: [1, 1.02, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+      {/* Ponteiros */}
+      <line x1="60" y1="50" x2="60" y2="30" stroke="#1A1A1A" strokeWidth="3" strokeLinecap="round" />
+      <motion.line
+        x1="60" y1="50" x2="75" y2="50"
+        stroke="#F2D06B"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        initial={{ rotate: 0 }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        style={{ transformOrigin: "60px 50px" }}
+      />
+      {/* Centro */}
+      <circle cx="60" cy="50" r="3" fill="#1A1A1A" />
+      {/* Marcas de hora */}
+      <circle cx="60" cy="25" r="2" fill="#1A1A1A" />
+      <circle cx="85" cy="50" r="2" fill="#1A1A1A" />
+      <circle cx="60" cy="75" r="2" fill="#1A1A1A" />
+      <circle cx="35" cy="50" r="2" fill="#1A1A1A" />
+    </svg>
   )
 };
 
@@ -228,7 +262,8 @@ const defaultMessages = {
   rewards: { title: "nada por aqui...", description: "as vantagens sumiram! volte mais tarde" },
   students: { title: "turma vazia", description: "cadeiras esperando por alunos" },
   search: { title: "nao encontrado", description: "tente buscar com outras palavras" },
-  generic: { title: "esta vazio", description: "nada para mostrar no momento" }
+  generic: { title: "esta vazio", description: "nada para mostrar no momento" },
+  history: { title: "historico vazio", description: "suas atividades aparecerao aqui" }
 };
 
 export function SketchEmptyState({ 

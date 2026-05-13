@@ -32,14 +32,14 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
     {
       id: "empresa",
       title: "Empresa",
-      subtitle: "ofereço vantagens\npara estudantes",
+      subtitle: "ofereco vantagens\npara estudantes",
       icon: Building2,
       color: "#4CAF50"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#F5F2E9] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-[#F5F2E9] flex flex-col items-center justify-center px-6 py-12">
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -48,14 +48,14 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="w-12 h-12 bg-[#F2D06B] border-[2.5px] border-black rounded-full flex items-center justify-center"
                style={{ borderRadius: "50% 45% 48% 52%" }}>
-            <span className="text-2xl">$</span>
+            <span className="text-2xl font-bold">$</span>
           </div>
-          <h1 className="text-4xl md:text-5xl" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+          <h1 className="text-4xl md:text-5xl font-semibold" style={{ fontFamily: "'Architects Daughter', cursive" }}>
             Moeda Estudantil
           </h1>
         </div>
-        <p className="text-lg text-[#1A1A1A] italic" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-          Quem é você?
+        <p className="text-lg text-[#1A1A1A] italic font-medium" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+          Quem e voce?
         </p>
         <p className="text-sm text-gray-600 mt-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
           Selecione seu perfil para continuar
@@ -72,6 +72,7 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: index * 0.1 }}
             >
+              {/* Efeito 3D hover APENAS nesta tela */}
               <SketchCard hoverable onClick={() => onSelectRole(role.id)} className="h-full">
                 <div className="flex flex-col items-center text-center p-6">
                   <div
@@ -84,7 +85,7 @@ export function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                     <Icon size={36} color={role.color === "#F2D06B" ? "#1A1A1A" : role.color} strokeWidth={2.5} />
                   </div>
 
-                  <h2 className="text-2xl mb-3" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                  <h2 className="text-2xl mb-3 font-semibold" style={{ fontFamily: "'Architects Daughter', cursive" }}>
                     {role.title}
                   </h2>
 
