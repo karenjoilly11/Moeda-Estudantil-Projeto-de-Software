@@ -6,12 +6,11 @@
 
 ## 👥 Autores
 
-
 | 👤 Nome | 🖼️ Foto | :octocat: GitHub | 💼 LinkedIn | 📤 Gmail |
 |---------|----------|-----------------|-------------|-----------|
-| Josué Carlos Goulart dos Reis  | <div align="center"><img src="https://joaopauloaramuni.github.io/image/aramunilogo.png" width="70px" height="70px"></div> | <div align="center"><a href="https://github.com/user2"><img src="https://joaopauloaramuni.github.io/image/github6.png" width="50px" height="50px"></a></div> | <div align="center"><a href="https://www.linkedin.com/in/user2"><img src="https://joaopauloaramuni.github.io/image/linkedin2.png" width="50px" height="50px"></a></div> | <div align="center"><a href="mailto:user2@gmail.com"><img src="https://joaopauloaramuni.github.io/image/gmail3.png" width="50px" height="50px"></a></div> |
-| Karen Joilly | <img src="https://raw.githubusercontent.com/karenjoilly11/Resenha-de-Artigos-Projeto-de-Software/main/assets/fotokaren.jpg" width="70px" width="70px"> | <div align="center"><a href="https://github.com/vcaraujo"><img src="https://joaopauloaramuni.github.io/image/github6.png" width="50px"></a></div> | <div align="center"><a href="https://www.linkedin.com/in/karen-joilly-araujo-gregorio-de-almeida/"><img src="https://joaopauloaramuni.github.io/image/linkedin2.png" width="50px"></a> | <div align="center"><a href="mailto:karenjoilly@gmail.com"><img src="https://joaopauloaramuni.github.io/image/gmail3.png" width="50px"></a></div> |
-| Luiz Fernando Batista Moreira  | <div align="center"><img src="https://joaopauloaramuni.github.io/image/aramunilogo.png" width="70px" height="70px"></div> | <div align="center"><a href="https://github.com/user2"><img src="https://joaopauloaramuni.github.io/image/github6.png" width="50px" height="50px"></a></div> | <div align="center"><a href="https://www.linkedin.com/in/user2"><img src="https://joaopauloaramuni.github.io/image/linkedin2.png" width="50px" height="50px"></a></div> | <div align="center"><a href="mailto:user2@gmail.com"><img src="https://joaopauloaramuni.github.io/image/gmail3.png" width="50px" height="50px"></a></div> |
+| Josué Carlos Goulart dos Reis | <div align="center"><img src="https://joaopauloaramuni.github.io/image/aramunilogo.png" width="70px" height="70px"></div> | <div align="center"><a href="https://github.com/user2"><img src="https://joaopauloaramuni.github.io/image/github6.png" width="50px" height="50px"></a></div> | <div align="center"><a href="https://www.linkedin.com/in/user2"><img src="https://joaopauloaramuni.github.io/image/linkedin2.png" width="50px" height="50px"></a></div> | <div align="center"><a href="mailto:user2@gmail.com"><img src="https://joaopauloaramuni.github.io/image/gmail3.png" width="50px" height="50px"></a></div> |
+| Karen Joilly | <img src="https://raw.githubusercontent.com/karenjoilly11/Resenha-de-Artigos-Projeto-de-Software/main/assets/fotokaren.jpg" width="70px" height="70px"> | <div align="center"><a href="https://github.com/vcaraujo"><img src="https://joaopauloaramuni.github.io/image/github6.png" width="50px"></a></div> | <div align="center"><a href="https://www.linkedin.com/in/karen-joilly-araujo-gregorio-de-almeida/"><img src="https://joaopauloaramuni.github.io/image/linkedin2.png" width="50px"></a></div> | <div align="center"><a href="mailto:karenjoilly@gmail.com"><img src="https://joaopauloaramuni.github.io/image/gmail3.png" width="50px"></a></div> |
+| Luiz Fernando Batista Moreira | <div align="center"><img src="https://joaopauloaramuni.github.io/image/aramunilogo.png" width="70px" height="70px"></div> | <div align="center"><a href="https://github.com/user2"><img src="https://joaopauloaramuni.github.io/image/github6.png" width="50px" height="50px"></a></div> | <div align="center"><a href="https://www.linkedin.com/in/user2"><img src="https://joaopauloaramuni.github.io/image/linkedin2.png" width="50px" height="50px"></a></div> | <div align="center"><a href="mailto:user2@gmail.com"><img src="https://joaopauloaramuni.github.io/image/gmail3.png" width="50px" height="50px"></a></div> |
 
 ---
 
@@ -78,11 +77,11 @@
 
 Antes de começar, você vai precisar ter instalado em sua máquina:
 
-- [Java JDK 21+](https://www.oracle.com/java/technologies/downloads/)
-- [Maven](https://maven.apache.org/download.cgi)
-- [Node.js 18+](https://nodejs.org/)
-- [npm](https://www.npmjs.com/) ou [yarn](https://yarnpkg.com/)
-- [Git](https://git-scm.com/)
+- Java JDK 21+
+- Maven
+- Node.js 18+
+- npm ou yarn
+- Git
 
 ---
 
@@ -93,19 +92,24 @@ Antes de começar, você vai precisar ter instalado em sua máquina:
 ```bash
 git clone https://github.com/seu-usuario/moeda-estudantil.git
 cd moeda-estudantil
+```
 
 ### 2️⃣ Backend (Spring Boot)
-bash
+
+```bash
 cd backend
 
-# Primeira execução (baixa as dependências)
+# Primeira execução
 ./mvnw spring-boot:run
 
-# Ou use Maven local
+# Ou usando Maven instalado
 mvn spring-boot:run
+```
 
 ### 3️⃣ Frontend (React + Vite)
-# Em um novo terminal
+
+```bash
+# Em outro terminal
 cd frontend
 
 # Instale as dependências
@@ -113,33 +117,35 @@ npm install
 
 # Execute o projeto
 npm run dev
+```
 
 ---
 
 ## 📁 Estrutura do Projeto
 
-text
+```text
 moeda-estudantil/
 ├── backend/
 │   ├── src/main/java/com/moedaestudantil/api/
-│   │   ├── controller/       # Endpoints REST
-│   │   ├── service/          # Lógica de negócio
-│   │   ├── repository/       # Acesso a dados
-│   │   ├── entities/         # Modelos JPA
-│   │   └── dto/              # Objetos de transferência
+│   │   ├── controller/
+│   │   ├── service/
+│   │   ├── repository/
+│   │   ├── entities/
+│   │   └── dto/
 │   └── src/main/resources/
 │       └── application.properties
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── app/              # Componentes principais
-│   │   ├── services/         # Serviços de API
-│   │   ├── types/            # TypeScript types
-│   │   ├── hooks/            # Hooks customizados
-│   │   └── lib/              # Configurações
+│   │   ├── app/
+│   │   ├── services/
+│   │   ├── types/
+│   │   ├── hooks/
+│   │   └── lib/
 │   └── package.json
 │
 └── README.md
+```
 
 ---
 
@@ -149,5 +155,3 @@ moeda-estudantil/
 - [Diagrama de Classe](./Modelagem/Classe/Moeda%20Estudantil%20-%20Diagrama%20de%20Classe%20-%20Sprint%203.png)
 - [Diagrama de Componentes](./Modelagem/Componentes/Componentes%20-%20Moeda%20Estudantil%20-%20Sprint%203.drawio.png)
 - [Histórias de Usuário em PDF](./docs/historias-de-usuario/historias-de-usuario.pdf)
-
----
