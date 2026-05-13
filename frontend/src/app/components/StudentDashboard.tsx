@@ -4,6 +4,7 @@ import { Sketch3DCard, Sketch3DCardGlow } from "./Sketch3DCard";
 import { SketchCard } from "./SketchCard";
 import { SketchButton } from "./SketchButton";
 import { SketchBadge } from "./SketchBadge";
+import { SketchInput } from './SketchInput';
 import { Navbar } from "./Navbar";
 import { 
   SketchProductCardSkeleton, 
@@ -13,6 +14,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { alunoService } from "@/services/alunoService";
 import { transacaoService } from "@/services/transacaoService";
 import { useConfetti } from "@/hooks/useConfetti";
+import { User, Mail, MapPin, BookOpen, Lock, Save, X } from "lucide-react";
 import type {
   Aluno,
   Transacao,
@@ -51,6 +53,7 @@ const emojiVantagem = (nome: string) => {
 };
 
 export function StudentDashboard({ aluno, onLogout, onSaldoUpdate }: StudentDashboardProps) {
+  const [alunoData, setAlunoData] = useState(aluno);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReward, setSelectedReward] = useState<Vantagem | null>(null);
   const [copiedCupom, setCopiedCupom] = useState(false);
@@ -62,6 +65,104 @@ export function StudentDashboard({ aluno, onLogout, onSaldoUpdate }: StudentDash
   const [erroResgate, setErroResgate] = useState<string | null>(null);
   const [processandoResgate, setProcessandoResgate] = useState(false);
   const [cupomGerado, setCupomGerado] = useState<ResgateResponse | null>(null);
+
+  // Estados para edição de perfil
+  const [editando, setEditando] = useState(false);
+  const [editandoSenha, setEditandoSenha] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState<string | null>(null);
+  
+  const [editForm, setEditForm] = useState({
+    nome: aluno.nome,
+    email: aluno.email,
+    endereco: aluno.endereco || "",
+    curso: aluno.curso,
+  });
+  
+  const [editSenha, setEditSenha] = useState({
+    senhaAtual: "",
+    novaSenha: "",
+    confirmarNovaSenha: "",
+  });
+
+  
+  // No StudentDashboard.tsx, no handleEditSubmit:
+const handleEditSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setEditError(null);
+  setEditSuccess(null);
+  setSalvando(true);
+
+  try {
+    // 🔍 LOG ANTES DE ENVIAR
+    console.log("📤 Dados do formulário:", editForm);
+    console.log("📤 Aluno atual:", aluno);
+    console.log("📤 ID do aluno:", aluno.id);
+    
+    const response = await alunoService.atualizarPerfil({
+      nome: editForm.nome,
+      email: editForm.email,
+      endereco: editForm.endereco,
+      curso: editForm.curso,
+    });
+    
+    console.log("✅ Resposta do servidor:", response);
+    
+    // Atualiza o localStorage com os novos dados
+    const alunoAtualizado = { ...aluno, ...editForm };
+    localStorage.setItem("aluno_data", JSON.stringify(alunoAtualizado));
+    alunoService.atualizarCache(alunoAtualizado);
+    
+    setEditSuccess("Perfil atualizado com sucesso!");
+    setTimeout(() => {
+      setEditando(false);
+      // Recarrega para mostrar dados atualizados
+      window.location.reload();
+    }, 1500);
+  } catch (err: any) {
+    console.error("❌ Erro completo:", err);
+    console.error("❌ Response data:", err.response?.data);
+    console.error("❌ Response status:", err.response?.status);
+    setEditError(err.response?.data || err?.message || "Erro ao atualizar perfil");
+  } finally {
+    setSalvando(false);
+  }
+};
+
+  const handleSenhaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError(null);
+    setEditSuccess(null);
+    
+    if (editSenha.novaSenha !== editSenha.confirmarNovaSenha) {
+      setEditError("As novas senhas não coincidem");
+      return;
+    }
+    
+    if (editSenha.novaSenha.length < 6) {
+      setEditError("A nova senha deve ter no mínimo 6 caracteres");
+      return;
+    }
+    
+    setSalvando(true);
+    
+    try {
+      await alunoService.alterarSenha({
+        senhaAtual: editSenha.senhaAtual,
+        novaSenha: editSenha.novaSenha,
+      });
+      
+      setEditSuccess("Senha alterada com sucesso!");
+      setEditSenha({ senhaAtual: "", novaSenha: "", confirmarNovaSenha: "" });
+      setEditandoSenha(false);
+      setTimeout(() => setEditSuccess(null), 3000);
+    } catch (err: any) {
+      setEditError(err?.message || "Erro ao alterar senha");
+    } finally {
+      setSalvando(false);
+    }
+  };
 
   const { fireGoldCoins, fireSuccess } = useConfetti();
 
@@ -162,51 +263,62 @@ export function StudentDashboard({ aluno, onLogout, onSaldoUpdate }: StudentDash
         userName={aluno.nome}
         userEmail={aluno.email}
         onLogout={handleLogout}
+        onEditClick={() => setEditando(true)}
       />
 
       <div className="max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2">
-          {/* Greeting Card */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="mb-6"
-          >
-            <Sketch3DCardGlow glowColor="#F2D06B">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <h1
-                    className="text-2xl sm:text-3xl mb-2"
-                    style={{ fontFamily: "'Architects Daughter', cursive" }}
-                  >
-                    Ola, {aluno.nome.split(" ")[0]}!
-                  </h1>
-                  <p
-                    className="text-sm text-gray-600 italic"
-                    style={{ fontFamily: "'Architects Daughter', cursive" }}
-                  >
-                    {aluno.curso} - {aluno.instituicaoNome}
-                  </p>
-                </div>
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring" }}
-                >
-                  <SketchBadge variant="gold" icon className="text-2xl sm:text-3xl px-4 sm:px-6 py-2 sm:py-3">
-                    {balance}
-                  </SketchBadge>
-                </motion.div>
-              </div>
-              <p
-                className="text-xs text-gray-500 mt-3"
-                style={{ fontFamily: "'Architects Daughter', cursive" }}
-              >
-                seu saldo atual de moedas
-              </p>
-            </Sketch3DCardGlow>
-          </motion.div>
+          {/* Greeting Card */} 
+
+<motion.div
+  initial={{ y: 20, opacity: 0 }}
+  animate={{ y: 0, opacity: 1 }}
+  className="mb-6"
+>
+  <Sketch3DCardGlow glowColor="#F2D06B">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <h1
+          className="text-2xl sm:text-3xl mb-2"
+          style={{ fontFamily: "'Architects Daughter', cursive" }}
+        >
+          Olá, {aluno.nome.split(" ")[0]}!
+        </h1>
+        <p
+          className="text-sm text-gray-600 italic"
+          style={{ fontFamily: "'Architects Daughter', cursive" }}
+        >
+          {aluno.curso} - {aluno.instituicaoNome}
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <motion.div
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: "spring" }}
+        >
+          <SketchBadge variant="gold" icon className="text-2xl sm:text-3xl px-4 sm:px-6 py-2 sm:py-3">
+            {balance}
+          </SketchBadge>
+        </motion.div>
+        <button
+          onClick={() => setEditando(true)}
+          className="p-2 hover:bg-white/20 rounded-full transition-colors"
+          title="Editar perfil"
+        >
+          <User size={20} />
+        </button>
+      </div>
+    </div>
+    <p
+      className="text-xs text-gray-500 mt-3"
+      style={{ fontFamily: "'Architects Daughter', cursive" }}
+    >
+      seu saldo atual de moedas
+    </p>
+  </Sketch3DCardGlow>
+</motion.div>
 
           {/* Vitrine Section */}
           <div className="mb-4">
@@ -414,6 +526,176 @@ export function StudentDashboard({ aluno, onLogout, onSaldoUpdate }: StudentDash
             </SketchCard>
           </motion.div>
         </div>
+
+        {/* Modal de Edição de Perfil */}
+<AnimatePresence>
+  {editando && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={() => !salvando && setEditando(false)}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-md w-full max-h-[90vh] overflow-y-auto"
+      >
+        <SketchCard>
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl sm:text-2xl" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                Editar Perfil
+              </h2>
+              <button
+                onClick={() => setEditando(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="bg-red-100 border-2 border-red-400 text-red-700 px-3 py-2 text-sm rounded-lg mb-4">
+                ⚠ {editError}
+              </div>
+            )}
+
+            {editSuccess && !editandoSenha && (
+              <div className="bg-green-100 border-2 border-green-400 text-green-700 px-3 py-2 text-sm rounded-lg mb-4">
+                ✅ {editSuccess}
+              </div>
+            )}
+
+            {/* Abas */}
+            <div className="flex border-b-2 border-black mb-6">
+              <button
+                onClick={() => setEditandoSenha(false)}
+                className={`flex-1 py-2 text-center text-lg transition-all ${
+                  !editandoSenha
+                    ? "border-b-4 border-[#F2D06B] font-bold"
+                    : "text-gray-500 hover:text-black"
+                }`}
+                style={{ fontFamily: "'Architects Daughter', cursive" }}
+              >
+                Dados
+              </button>
+              <button
+                onClick={() => setEditandoSenha(true)}
+                className={`flex-1 py-2 text-center text-lg transition-all ${
+                  editandoSenha
+                    ? "border-b-4 border-[#F2D06B] font-bold"
+                    : "text-gray-500 hover:text-black"
+                }`}
+                style={{ fontFamily: "'Architects Daughter', cursive" }}
+              >
+                Senha
+              </button>
+            </div>
+
+            {!editandoSenha ? (
+              <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+                <SketchInput
+                  label="Nome completo"
+                  value={editForm.nome}
+                  onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
+                  required
+                />
+                <SketchInput
+                  label="Email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  required
+                />
+                <SketchInput
+                  label="Endereço"
+                  value={editForm.endereco}
+                  onChange={(e) => setEditForm({ ...editForm, endereco: e.target.value })}
+                />
+                <SketchInput
+                  label="Curso"
+                  value={editForm.curso}
+                  onChange={(e) => setEditForm({ ...editForm, curso: e.target.value })}
+                  required
+                />
+
+                <div className="flex gap-3 mt-2">
+                  <SketchButton
+                    variant="outline"
+                    type="button"
+                    className="flex-1"
+                    onClick={() => setEditando(false)}
+                  >
+                    Cancelar
+                  </SketchButton>
+                  <SketchButton
+                    variant="primary"
+                    type="submit"
+                    className="flex-1"
+                    disabled={salvando}
+                  >
+                    {salvando ? "Salvando..." : "Salvar"}
+                  </SketchButton>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSenhaSubmit} className="flex flex-col gap-4">
+                <SketchInput
+                  label="Senha atual"
+                  type="password"
+                  value={editSenha.senhaAtual}
+                  onChange={(e) => setEditSenha({ ...editSenha, senhaAtual: e.target.value })}
+                  required
+                />
+                <SketchInput
+                  label="Nova senha"
+                  type="password"
+                  value={editSenha.novaSenha}
+                  onChange={(e) => setEditSenha({ ...editSenha, novaSenha: e.target.value })}
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                />
+                <SketchInput
+                  label="Confirmar nova senha"
+                  type="password"
+                  value={editSenha.confirmarNovaSenha}
+                  onChange={(e) => setEditSenha({ ...editSenha, confirmarNovaSenha: e.target.value })}
+                  required
+                />
+
+                <div className="flex gap-3 mt-2">
+                  <SketchButton
+                    variant="outline"
+                    type="button"
+                    className="flex-1"
+                    onClick={() => {
+                      setEditandoSenha(false);
+                      setEditSenha({ senhaAtual: "", novaSenha: "", confirmarNovaSenha: "" });
+                    }}
+                  >
+                    Voltar
+                  </SketchButton>
+                  <SketchButton
+                    variant="primary"
+                    type="submit"
+                    className="flex-1"
+                    disabled={salvando}
+                  >
+                    {salvando ? "Alterando..." : "Alterar senha"}
+                  </SketchButton>
+                </div>
+              </form>
+            )}
+          </div>
+        </SketchCard>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
       </div>
 
       {/* Modal de Confirmacao de Resgate */}
@@ -627,5 +909,6 @@ export function StudentDashboard({ aluno, onLogout, onSaldoUpdate }: StudentDash
         )}
       </AnimatePresence>
     </div>
+    
   );
 }

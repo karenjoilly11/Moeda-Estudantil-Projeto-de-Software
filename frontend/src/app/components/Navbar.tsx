@@ -8,6 +8,7 @@ interface NavbarProps {
   userName: string;
   userEmail?: string;
   onLogout: () => void;
+  onEditClick?: () => void;
 }
 
 const roleConfig: Record<UserRole, { 
@@ -36,7 +37,7 @@ const roleConfig: Record<UserRole, {
   }
 };
 
-export function Navbar({ role, userName, userEmail, onLogout }: NavbarProps) {
+export function Navbar({ role, userName, userEmail, onLogout, onEditClick }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const config = roleConfig[role];
   const RoleIcon = config.icon;

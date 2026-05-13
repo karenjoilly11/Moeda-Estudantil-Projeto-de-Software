@@ -6,7 +6,8 @@ export const alunoService = {
     const resp = await api.post<LoginResponse>("/aluno/login", { email, senha });
     setToken(resp.token);
     setRole('aluno');
-    setStoredUser(resp.aluno);
+    console.log("✅ Aluno logado:", resp.aluno);
+setStoredUser(resp.aluno);
     return resp.aluno;
   },
 
@@ -24,8 +25,37 @@ export const alunoService = {
     senha: string;
     instituicaoId: number;
   }): Promise<Aluno> => {
-  const response = await api.post("/aluno/cadastro", dados) as { data: Aluno };
+    const response = await api.post("/aluno/cadastro", dados) as { data: Aluno };
+    return response.data;
+  },
+
+  /**
+ * Atualiza perfil do aluno
+ */
+ atualizarPerfil: async (dados: {
+  nome: string;
+  email: string;
+  endereco: string;
+  curso: string;
+}): Promise<Aluno> => {
+  const aluno = getStoredUser<Aluno>();
+  
+  if (!aluno?.id) {
+    throw new Error("ID do aluno não encontrado");
+  }
+  
+  const response = await api.put(`/aluno/perfil/${aluno.id}`, dados);
   return response.data;
+},
+
+  /**
+   * Altera senha do aluno
+   */
+  alterarSenha: async (dados: {
+    senhaAtual: string;
+    novaSenha: string;
+  }): Promise<void> => {
+    await api.put("/aluno/senha", dados);
   },
 
   alunoArmazenado: (): Aluno | null => {
@@ -45,4 +75,6 @@ export const alunoService = {
 
   buscarDados: (alunoId: number) =>
     api.get<Aluno>(`/aluno/${alunoId}`),
+
+  
 };

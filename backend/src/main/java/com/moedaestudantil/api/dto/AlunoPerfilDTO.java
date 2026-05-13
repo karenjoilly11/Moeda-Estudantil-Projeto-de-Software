@@ -3,12 +3,9 @@ package com.moedaestudantil.api.dto;
 import lombok.Data;
 
 @Data
-public class AlunoResponseDTO {
-    private Long id;
+public class AlunoPerfilDTO {
     private String nome;
     private String email;
     private String endereco;
     private String curso;
-    private String instituicaoNome;
-    private Double saldoMoedas;
 }
