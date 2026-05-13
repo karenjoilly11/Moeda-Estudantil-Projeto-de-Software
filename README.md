@@ -64,6 +64,85 @@
 
 ---
 
+## 🛠️ Tecnologias Utilizadas
+
+| Camada | Tecnologias |
+|--------|-------------|
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Framer Motion, Axios |
+| **Backend** | Java 21, Spring Boot 3.4.4, Spring Data JPA, H2 Database |
+| **Ferramentas** | Maven, Git, npm |
+
+---
+
+## 📋 Pré-requisitos
+
+Antes de começar, você vai precisar ter instalado em sua máquina:
+
+- [Java JDK 21+](https://www.oracle.com/java/technologies/downloads/)
+- [Maven](https://maven.apache.org/download.cgi)
+- [Node.js 18+](https://nodejs.org/)
+- [npm](https://www.npmjs.com/) ou [yarn](https://yarnpkg.com/)
+- [Git](https://git-scm.com/)
+
+---
+
+## ⚙️ Instalação e Execução
+
+### 1️⃣ Clone o repositório
+
+```bash
+git clone https://github.com/seu-usuario/moeda-estudantil.git
+cd moeda-estudantil
+
+### 2️⃣ Backend (Spring Boot)
+bash
+cd backend
+
+# Primeira execução (baixa as dependências)
+./mvnw spring-boot:run
+
+# Ou use Maven local
+mvn spring-boot:run
+
+### 3️⃣ Frontend (React + Vite)
+# Em um novo terminal
+cd frontend
+
+# Instale as dependências
+npm install
+
+# Execute o projeto
+npm run dev
+
+---
+
+## 📁 Estrutura do Projeto
+
+text
+moeda-estudantil/
+├── backend/
+│   ├── src/main/java/com/moedaestudantil/api/
+│   │   ├── controller/       # Endpoints REST
+│   │   ├── service/          # Lógica de negócio
+│   │   ├── repository/       # Acesso a dados
+│   │   ├── entities/         # Modelos JPA
+│   │   └── dto/              # Objetos de transferência
+│   └── src/main/resources/
+│       └── application.properties
+│
+├── frontend/
+│   ├── src/
+│   │   ├── app/              # Componentes principais
+│   │   ├── services/         # Serviços de API
+│   │   ├── types/            # TypeScript types
+│   │   ├── hooks/            # Hooks customizados
+│   │   └── lib/              # Configurações
+│   └── package.json
+│
+└── README.md
+
+---
+
 ## 📎 Documentos Complementares
 
 - [Diagrama de Casos de Uso](./Modelagem/Caso%20de%20Uso/Caso%20de%20Uso%20-%20Sprint%203%20-%20Projeto%20de%20Software.png)
@@ -72,4 +151,3 @@
 - [Histórias de Usuário em PDF](./docs/historias-de-usuario/historias-de-usuario.pdf)
 
 ---
-
