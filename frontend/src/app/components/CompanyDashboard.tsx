@@ -18,8 +18,23 @@ interface CompanyDashboardProps {
 }
 
 export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
+
+  const [empresaData, setEmpresaData] = useState(empresa);
   const [activeView, setActiveView] = useState("minhas-vantagens");
   const [showNewRewardForm, setShowNewRewardForm] = useState(false);
+
+  const [editando, setEditando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    nome: empresaData.nome,
+    email: empresaData.email,
+    telefone: empresaData.telefone || "",
+    endereco: empresaData.endereco || "",
+    descricao: empresaData.descricao || "",
+  });
+
   const [newReward, setNewReward] = useState({
     title: "",
     description: "",
@@ -41,6 +56,84 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
     { id: "lazer", label: "Lazer" },
     { id: "outros", label: "Outros" },
   ];
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError(null);
+    setEditSuccess(null);
+    setSalvando(true);
+
+    try {
+      await empresaService.atualizarPerfil(empresaData.id, {
+        nome: editForm.nome,
+        email: editForm.email,
+        telefone: editForm.telefone,
+        endereco: editForm.endereco,
+        descricao: editForm.descricao,
+      });
+      
+      const empresaAtualizada = { ...empresaData, ...editForm };
+
+localStorage.setItem(
+  "empresa_data",
+  JSON.stringify(empresaAtualizada)
+);
+
+setEditSuccess("Perfil atualizado com sucesso!");
+
+setEmpresaData(empresaAtualizada);
+
+setTimeout(() => {
+  setEditando(false);
+}, 1500);
+    } catch (err: any) {
+      setEditError(err?.message || "Erro ao atualizar perfil");
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  // Função para excluir conta
+  const handleExcluirConta = async () => {
+    const confirmacao = window.confirm(
+      "⚠️ ATENÇÃO! ⚠️\n\n" +
+      "Você está prestes a EXCLUIR PERMANENTEMENTE sua conta.\n\n" +
+      "Isso irá:\n" +
+      "• Remover todos os seus dados\n" +
+      "• Remover todas as vantagens cadastradas\n" +
+      "• Remover histórico de cupons\n" +
+      "• Não será possível recuperar\n\n" +
+      "Digite 'EXCLUIR' para confirmar:"
+    );
+    
+    if (!confirmacao) return;
+    
+    const textoConfirmacao = window.prompt(
+      "Digite 'EXCLUIR MINHA CONTA' para confirmar a exclusão permanente:"
+    );
+    
+    if (textoConfirmacao !== "EXCLUIR MINHA CONTA") {
+      alert("Confirmação incorreta. A exclusão foi cancelada.");
+      return;
+    }
+    
+    setSalvando(true);
+    
+    try {
+      await empresaService.excluirConta(empresaData.id);
+      
+      localStorage.clear();
+      alert("✅ Conta excluída com sucesso!");
+      
+      window.location.href = "/login";
+    } catch (err: any) {
+      console.error("Erro ao excluir conta:", err);
+      alert("❌ Erro ao excluir conta: " + (err.response?.data || err.message));
+    } finally {
+      setSalvando(false);
+    }
+  };
+
 
   const handleCreateReward = async () => {
     setFormError(null);
@@ -64,7 +157,7 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
         custoMoedas: custoNum,
         estoque: newReward.stock ? parseInt(newReward.stock, 10) : undefined,
         categoria: newReward.category,
-        empresaId: empresa.id,
+        empresaId: empresaData.id,
       });
       fireSuccess();
       setShowNewRewardForm(false);
@@ -88,7 +181,7 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
         activeView={activeView} 
         onViewChange={setActiveView} 
         onLogout={onLogout}
-        empresaNome={empresa.nome}
+        empresaNome={empresaData.nome}
       />
 
       {/* Main Content Area */}
@@ -97,14 +190,14 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
 
         {activeView === "minhas-vantagens" && (
           <RewardsTableView
-            empresaId={empresa.id}
+            empresaId={empresaData.id}
             onNewReward={() => setShowNewRewardForm(true)}
             reloadKey={reloadKey}
             onChanged={() => setReloadKey((k) => k + 1)}
           />
         )}
 
-        {activeView === "cupons" && <EmpresaCupons empresaId={empresa.id} />}
+        {activeView === "cupons" && <EmpresaCupons empresaId={empresaData.id} />}
 
         {activeView === "relatorios" && (
           <div className="p-4 sm:p-6">
@@ -147,46 +240,198 @@ export function CompanyDashboard({ empresa, onLogout }: CompanyDashboardProps) {
         )}
 
         {activeView === "conta" && (
-          <div className="p-4 sm:p-6">
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-            >
-              <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                conta
-              </h1>
-              <p className="text-gray-600 italic mb-6 text-sm" style={{ fontFamily: "'Architects Daughter', cursive" }}>
-                Gerencie as informacoes da sua empresa
-              </p>
-
-              <SketchCard className="max-w-2xl">
-                <div className="p-4 sm:p-6 space-y-4">
-                  <SketchInput
-                    label="Nome da empresa"
-                    value={empresa.nome}
-                    readOnly
-                  />
-                  <SketchInput
-                    label="CNPJ"
-                    value={empresa.cnpj || "Nao informado"}
-                    readOnly
-                  />
-                  <SketchInput
-                    label="E-mail de contato"
-                    type="email"
-                    value={empresa.email}
-                    readOnly
-                  />
-                  <SketchInput
-                    label="Telefone"
-                    placeholder="(31) 99999-9999"
-                  />
-                </div>
-              </SketchCard>
-            </motion.div>
-          </div>
-        )}
+  <div className="p-4 sm:p-6">
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl sm:text-3xl" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+          conta
+        </h1>
+        <button
+          onClick={() => setEditando(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#F2D06B] hover:bg-[#e8c84a] border-2 border-black rounded-lg transition-all"
+          style={{ fontFamily: "'Architects Daughter', cursive" }}
+        >
+          Editar Perfil
+        </button>
       </div>
+      <p className="text-gray-600 italic mb-6 text-sm" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+        Gerencie as informacoes da sua empresa
+      </p>
+
+      <SketchCard className="max-w-2xl">
+        <div className="p-4 sm:p-6 space-y-4">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Nome da empresa</p>
+              <p className="font-medium">{empresaData.nome}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">CNPJ</p>
+              <p className="font-medium">{empresaData.cnpj || "Não informado"}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">E-mail</p>
+              <p className="font-medium">{empresaData.email}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Telefone</p>
+              <p className="font-medium">{empresaData.telefone || "Não informado"}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Endereço</p>
+              <p className="font-medium">{empresaData.endereco || "Não informado"}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Descrição</p>
+              <p className="font-medium">{empresaData.descricao || "Não informada"}</p>
+            </div>
+          </div>
+        </div>
+      </SketchCard>
+    </motion.div>
+  </div>
+)}
+      </div>
+
+{/* Modal de Edição de Perfil */}
+<AnimatePresence>
+  {editando && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={() => !salvando && setEditando(false)}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-md w-full max-h-[90vh] overflow-y-auto"
+      >
+        <SketchCard>
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl sm:text-2xl" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                Editar Perfil
+              </h2>
+              <button
+                onClick={() => setEditando(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            {editError && (
+              <div className="bg-red-100 border-2 border-red-400 text-red-700 px-3 py-2 text-sm rounded-lg mb-4">
+                ⚠ {editError}
+              </div>
+            )}
+
+            {editSuccess && (
+              <div className="bg-green-100 border-2 border-green-400 text-green-700 px-3 py-2 text-sm rounded-lg mb-4">
+                ✅ {editSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+              <SketchInput
+                label="Nome da empresa"
+                value={editForm.nome}
+                onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
+                required
+              />
+              <SketchInput
+                label="E-mail"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                required
+              />
+              <SketchInput
+                label="Telefone"
+                value={editForm.telefone}
+                onChange={(e) => setEditForm({ ...editForm, telefone: e.target.value })}
+                placeholder="(31) 99999-9999"
+              />
+              <SketchInput
+                label="Endereço"
+                value={editForm.endereco}
+                onChange={(e) => setEditForm({ ...editForm, endereco: e.target.value })}
+                placeholder="Rua, número, bairro, cidade"
+              />
+              <div>
+                <label className="text-sm italic mb-2 block" style={{ fontFamily: "'Architects Daughter', cursive" }}>
+                  Descrição
+                </label>
+                <textarea
+                  value={editForm.descricao}
+                  onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })}
+                  rows={3}
+                  placeholder="Descreva sua empresa e as vantagens oferecidas..."
+                  className="w-full px-4 py-3 bg-white border-[2.5px] border-black outline-none focus:ring-2 focus:ring-[#F2D06B] resize-none"
+                  style={{ borderRadius: "8px 12px 6px 10px", fontFamily: "'Architects Daughter', cursive" }}
+                />
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <SketchButton
+                  variant="outline"
+                  type="button"
+                  className="flex-1"
+                  onClick={() => setEditando(false)}
+                >
+                  Cancelar
+                </SketchButton>
+                <SketchButton
+                  variant="primary"
+                  type="submit"
+                  className="flex-1"
+                  disabled={salvando}
+                >
+                  {salvando ? "Salvando..." : "Salvar"}
+                </SketchButton>
+              </div>
+            </form>
+
+            {/* Botão Excluir Conta */}
+            <div className="mt-6 pt-4 border-t-2 border-red-200">
+              <button
+                type="button"
+                onClick={handleExcluirConta}
+                className="w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+                style={{ fontFamily: "'Architects Daughter', cursive" }}
+                disabled={salvando}
+              >
+                Excluir minha conta
+              </button>
+            </div>
+          </div>
+        </SketchCard>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* Modal - Nova Vantagem */}
       <AnimatePresence>

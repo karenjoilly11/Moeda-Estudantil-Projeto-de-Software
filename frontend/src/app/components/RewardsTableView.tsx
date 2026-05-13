@@ -48,7 +48,7 @@ export function RewardsTableView({ empresaId, onNewReward, reloadKey, onChanged 
     setError(null);
     try {
       const data = await empresaService.listarVantagens(empresaId);
-      setRewards(data);
+      setRewards(Array.isArray(data) ? data : []);
     } catch (err) {
       setRewards([]);
       if (err instanceof ApiError) {
@@ -64,7 +64,7 @@ export function RewardsTableView({ empresaId, onNewReward, reloadKey, onChanged 
     loadRewards();
   }, [loadRewards, reloadKey]);
 
-  const filteredRewards = rewards.filter((r) => {
+  const filteredRewards = (rewards || []).filter((r) => {
     const matchesSearch =
       !searchQuery ||
       r.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||

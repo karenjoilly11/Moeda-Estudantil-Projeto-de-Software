@@ -2,6 +2,7 @@ package com.moedaestudantil.api.services;
 
 import com.moedaestudantil.api.dto.EmpresaCadastroDTO;
 import com.moedaestudantil.api.dto.EmpresaLoginResponseDTO;
+import com.moedaestudantil.api.dto.EmpresaPerfilDTO;
 import com.moedaestudantil.api.dto.EmpresaResponseDTO;
 import com.moedaestudantil.api.dto.LoginRequestDTO;
 import com.moedaestudantil.api.entities.Empresa;
@@ -11,6 +12,7 @@ import com.moedaestudantil.api.repositories.EmpresaRepository;
 import com.moedaestudantil.api.repositories.InstituicaoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Base64;
 import java.util.List;
@@ -22,7 +24,7 @@ public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
     private final InstituicaoRepository instituicaoRepository;
-
+    
     public EmpresaResponseDTO cadastrar(EmpresaCadastroDTO dto) {
         if (empresaRepository.existsByEmail(dto.getEmail())) {
             throw new RuntimeException("Email já cadastrado!");
@@ -87,4 +89,24 @@ public class EmpresaService {
         dto.setInstituicaoNome(empresa.getInstituicao() != null ? empresa.getInstituicao().getNome() : null);
         return dto;
     }
+    public EmpresaResponseDTO atualizarPerfil(Long id, EmpresaPerfilDTO dto) {
+    Empresa empresa = empresaRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+    
+    empresa.setNome(dto.getNome());
+    empresa.setEmail(dto.getEmail());
+    empresa.setTelefone(dto.getTelefone());
+    empresa.setEndereco(dto.getEndereco());
+    empresa.setDescricao(dto.getDescricao());
+    
+    Empresa atualizada = empresaRepository.save(empresa);
+    return toResponseDTO(atualizada);
+}
+
+@Transactional
+public void excluirConta(Long id) {
+    Empresa empresa = empresaRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+    empresaRepository.delete(empresa);
+}
 }

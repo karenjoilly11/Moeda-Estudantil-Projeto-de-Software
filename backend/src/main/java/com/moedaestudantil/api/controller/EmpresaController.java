@@ -2,6 +2,7 @@ package com.moedaestudantil.api.controller;
 
 import com.moedaestudantil.api.dto.EmpresaCadastroDTO;
 import com.moedaestudantil.api.dto.LoginRequestDTO;
+import com.moedaestudantil.api.dto.EmpresaPerfilDTO;
 import com.moedaestudantil.api.services.EmpresaService;
 import com.moedaestudantil.api.services.TransacaoService;
 import com.moedaestudantil.api.services.VantagemService;
@@ -68,4 +69,22 @@ public class EmpresaController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @PutMapping("/perfil/{id}")
+public ResponseEntity<?> atualizarPerfil(@PathVariable Long id, @RequestBody EmpresaPerfilDTO dto) {
+    try {
+        return ResponseEntity.ok(empresaService.atualizarPerfil(id, dto));
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
+
+@DeleteMapping("/{id}")
+public ResponseEntity<?> excluirConta(@PathVariable Long id) {
+    try {
+        empresaService.excluirConta(id);
+        return ResponseEntity.ok().body("Conta excluída com sucesso");
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
 }

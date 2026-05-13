@@ -21,11 +21,17 @@ export const empresaService = {
   },
 
   login: async (email: string, senha: string): Promise<Empresa> => {
-    const response = await api.post<LoginResponse>("/empresa/login", { email, senha });
-    setToken(response.data.token);
-    localStorage.setItem("empresa_data", JSON.stringify(response.data.empresa));
-    return response.data.empresa;
-  },
+  const response = await api.post<LoginResponse>("/empresa/login", { email, senha });
+  
+  console.log("🔍 Resposta do login:", response.data);
+  console.log("🔍 Empresa retornada:", response.data.empresa);
+  console.log("🔍 ID da empresa:", response.data.empresa?.id);
+  
+  setToken(response.data.token);
+  localStorage.setItem("empresa_data", JSON.stringify(response.data.empresa));
+  
+  return response.data.empresa;
+},
 
   logout: () => {
     clearAuth();
@@ -86,18 +92,27 @@ export const empresaService = {
     return response.data;
   },
 
-  atualizarPerfil: async (dados: {
+  atualizarPerfil: async (
+  empresaId: number,
+  dados: {
     nome: string;
     email: string;
     telefone: string;
     endereco: string;
     descricao: string;
-  }): Promise<Empresa> => {
-    const empresa = empresaService.empresaArmazenada();
-    const response = await api.put(`/empresa/perfil/${empresa?.id}`, dados);
-    return response.data;
-  },
+  }
+): Promise<Empresa> => {
 
+  console.log("🔍 Atualizando empresa ID:", empresaId);
+
+  const response = await api.put<Empresa>(
+    `/empresa/perfil/${empresaId}`,
+    dados
+  );
+
+  return response.data;
+},
+  
   excluirConta: async (empresaId: number): Promise<void> => {
     await api.delete(`/empresa/${empresaId}`);
     clearAuth();

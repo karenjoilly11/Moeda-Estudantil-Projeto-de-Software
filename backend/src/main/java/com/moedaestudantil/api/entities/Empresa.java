@@ -16,4 +16,10 @@ public class Empresa extends Usuario {
 
     @Column(length = 500)
     private String descricao;
+    
+    @Column(length = 20)
+private String telefone;
+
+@Column(length = 255)
+private String endereco;
 }
