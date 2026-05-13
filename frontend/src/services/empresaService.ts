@@ -1,18 +1,14 @@
-import { api } from "@/lib/api";
-import type { 
-  Empresa, 
-  Vantagem, 
-  VantagemCreate, 
+import { api, setToken, clearAuth } from "@/lib/api";
+import type {
+  Empresa,
+  Vantagem,
+  VantagemCreate,
   VantagemUpdate,
-  CupomValidacao
+  CupomValidacao,
+  LoginResponse
 } from "@/types/api";
-import { setToken } from "../lib/api";
-import { LoginResponse } from "../types/api";
 
 export const empresaService = {
-  /**
-   * Cadastro de nova empresa
-   */
   cadastrar: async (dados: {
     nome: string;
     email: string;
@@ -21,95 +17,89 @@ export const empresaService = {
     senha: string;
   }): Promise<Empresa> => {
     const response = await api.post<Empresa>("/empresa/cadastro", dados);
-    return response;
+    return response.data;
   },
 
-  /**
-   * Login da empresa
-   */
   login: async (email: string, senha: string): Promise<Empresa> => {
-    const resp = await api.post<LoginResponse>("/empresa/login", { email, senha });
-    setToken(resp.token);
-    localStorage.setItem("empresa_data", JSON.stringify(resp.empresa));
-    return resp.empresa;
+    const response = await api.post<LoginResponse>("/empresa/login", { email, senha });
+    setToken(response.data.token);
+    localStorage.setItem("empresa_data", JSON.stringify(response.data.empresa));
+    return response.data.empresa;
   },
-  /**
-   * Logout da empresa
-   */
+
   logout: () => {
-    setToken(null);
+    clearAuth();
     localStorage.removeItem("empresa_data");
   },
-  /**
-   * Recupera empresa armazenada no cache
-   */
+
   empresaArmazenada: (): Empresa | null => {
     const raw = localStorage.getItem("empresa_data");
     if (!raw) return null;
-    try { return JSON.parse(raw) as Empresa; } catch { return null; }
+    try {
+      return JSON.parse(raw) as Empresa;
+    } catch {
+      return null;
+    }
   },
 
-  /**
-   * Busca os dados da empresa
-   * GET /api/empresa/{id}
-   */
-  buscarDados: (empresaId: number) =>
-    api.get<Empresa>(`/empresa/${empresaId}`),
+  buscarDados: async (empresaId: number): Promise<Empresa> => {
+    const response = await api.get<Empresa>(`/empresa/${empresaId}`);
+    return response.data;
+  },
 
-  /**
-   * Lista todas as vantagens da empresa
-   * GET /api/empresa/{id}/vantagens
-   */
   listarVantagens: async (empresaId: number): Promise<Vantagem[]> => {
     const response = await api.get<Vantagem[]>(`/empresa/${empresaId}/vantagens`);
-    return response.map((item) => ({
-      id: item.id,
-      nome: item.nome,
-      descricao: item.descricao,
-      foto: item.foto || "",
-      custoMoedas: item.custoMoedas,
-      estoque: item.estoque,
-      categoria: item.categoria,
-      instituicaoNome: item.instituicaoNome || "",
-      empresaId: item.empresaId,
-      instituicaoId: item.instituicaoId,
-    }));
+    return response.data;
   },
 
-  /**
-   * Lista cupons da empresa
-   * GET /api/empresa/{id}/cupons
-   */
-  listarCupons: (empresaId: number) =>
-    api.get<CupomValidacao[]>(`/empresa/${empresaId}/cupons`),
+  listarCupons: async (empresaId: number): Promise<CupomValidacao[]> => {
+    const response = await api.get<CupomValidacao[]>(`/empresa/${empresaId}/cupons`);
+    return response.data;
+  },
 
-  /**
-   * Cria uma nova vantagem
-   */
-  criarVantagem: (data: VantagemCreate) =>
-    api.post<Vantagem>("/vantagem", data),
+  criarVantagem: async (data: VantagemCreate): Promise<Vantagem> => {
+    const response = await api.post<Vantagem>("/vantagem", data);
+    return response.data;
+  },
 
-  /**
-   * Atualiza uma vantagem existente
-   */
-  atualizarVantagem: (vantagemId: number, data: VantagemUpdate) =>
-    api.put<Vantagem>(`/vantagem/${vantagemId}`, data),
+  atualizarVantagem: async (vantagemId: number, data: VantagemUpdate): Promise<Vantagem> => {
+    const response = await api.put<Vantagem>(`/vantagem/${vantagemId}`, data);
+    return response.data;
+  },
 
-  /**
-   * Remove uma vantagem
-   */
-  removerVantagem: (vantagemId: number) =>
-    api.del<void>(`/vantagem/${vantagemId}`),
+  removerVantagem: async (vantagemId: number): Promise<void> => {
+    await api.delete(`/vantagem/${vantagemId}`);
+  },
 
-  /**
-   * Valida um cupom de resgate
-   */
-  validarCupom: (codigo: string) =>
-    api.get<CupomValidacao>(`/transacao/validar/${encodeURIComponent(codigo)}`),
+  validarCupom: async (codigo: string): Promise<CupomValidacao> => {
+    const response = await api.get<CupomValidacao>(`/transacao/validar/${encodeURIComponent(codigo)}`);
+    return response.data;
+  },
 
-  /**
-   * Utiliza/confirma um cupom
-   */
-  utilizarCupom: (codigo: string) =>
-    api.post<CupomValidacao>(`/transacao/utilizar/${encodeURIComponent(codigo)}`, {}),
+  utilizarCupom: async (codigo: string): Promise<CupomValidacao> => {
+    const response = await api.post<CupomValidacao>(`/transacao/utilizar/${encodeURIComponent(codigo)}`, {});
+    return response.data;
+  },
+
+  listarCuponsUtilizados: async (empresaId: number): Promise<CupomValidacao[]> => {
+    const response = await api.get<CupomValidacao[]>(`/empresa/${empresaId}/cupons`);
+    return response.data;
+  },
+
+  atualizarPerfil: async (dados: {
+    nome: string;
+    email: string;
+    telefone: string;
+    endereco: string;
+    descricao: string;
+  }): Promise<Empresa> => {
+    const empresa = empresaService.empresaArmazenada();
+    const response = await api.put(`/empresa/perfil/${empresa?.id}`, dados);
+    return response.data;
+  },
+
+  excluirConta: async (empresaId: number): Promise<void> => {
+    await api.delete(`/empresa/${empresaId}`);
+    clearAuth();
+  },
 };
