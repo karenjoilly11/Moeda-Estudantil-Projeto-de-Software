@@ -11,6 +11,7 @@ import com.moedaestudantil.api.enums.TipoUsuario;
 import com.moedaestudantil.api.repositories.EmpresaRepository;
 import com.moedaestudantil.api.repositories.InstituicaoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,15 +98,27 @@ public class EmpresaService {
     public EmpresaResponseDTO atualizarPerfil(Long id, EmpresaPerfilDTO dto) {
     Empresa empresa = empresaRepository.findById(id)
         .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
-    
+
     empresa.setNome(dto.getNome());
     empresa.setEmail(dto.getEmail());
     empresa.setTelefone(dto.getTelefone());
     empresa.setEndereco(dto.getEndereco());
     empresa.setDescricao(dto.getDescricao());
-    
-    Empresa atualizada = empresaRepository.save(empresa);
-    return toResponseDTO(atualizada);
+
+    try {
+        Empresa atualizada = empresaRepository.save(empresa);
+        return toResponseDTO(atualizada);
+    } catch (DataIntegrityViolationException e) {
+        // P2-N01: não vazar DDL/SQL
+        String causa = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : "";
+        if (causa != null && causa.toLowerCase().contains("email")) {
+            throw new RuntimeException("Email já em uso por outro usuário");
+        }
+        if (causa != null && causa.toLowerCase().contains("cnpj")) {
+            throw new RuntimeException("CNPJ já em uso por outro usuário");
+        }
+        throw new RuntimeException("Não foi possível atualizar: dados conflitam com outro cadastro");
+    }
 }
 
 @Transactional

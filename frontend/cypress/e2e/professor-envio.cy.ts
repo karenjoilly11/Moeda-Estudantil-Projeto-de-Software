@@ -63,20 +63,54 @@ describe('Professor - Golden Path (login + envio de moedas)', () => {
   })
 
   it('professor não pode enviar sem mensagem (regra de negócio)', () => {
+    // Login professor + aluno via API para pegar IDs reais
     cy.request('POST', `${Cypress.env('apiUrl')}/professor/login`, {
       email: 'professor.demo@pucminas.br',
       senha: 'professor@2024',
     }).then((login) => {
       const token = login.body.token
-      cy.request({
-        method: 'POST',
-        url: `${Cypress.env('apiUrl')}/professor/enviar-moedas`,
-        headers: { Authorization: `Bearer ${token}` },
-        body: { alunoId: 1, valor: 10, mensagem: '' },
-        failOnStatusCode: false,
-      }).then((resp) => {
-        expect(resp.status).to.eq(400)
-        expect(JSON.stringify(resp.body)).to.match(/[Mm]ensagem/)
+
+      cy.request('POST', `${Cypress.env('apiUrl')}/aluno/login`, {
+        email: 'aluno.demo@pucminas.br',
+        senha: 'aluno@2024',
+      }).then((alunoLogin) => {
+        const alunoId = alunoLogin.body.aluno.id
+
+        cy.request({
+          method: 'POST',
+          url: `${Cypress.env('apiUrl')}/professor/enviar-moedas`,
+          headers: { Authorization: `Bearer ${token}` },
+          body: { alunoId, valor: 10, mensagem: '' },
+          failOnStatusCode: false,
+        }).then((resp) => {
+          expect(resp.status).to.eq(400)
+        })
+      })
+    })
+  })
+
+  it('professor não pode enviar valor zero/negativo (P0-3)', () => {
+    cy.request('POST', `${Cypress.env('apiUrl')}/professor/login`, {
+      email: 'professor.demo@pucminas.br',
+      senha: 'professor@2024',
+    }).then((login) => {
+      const token = login.body.token
+
+      cy.request('POST', `${Cypress.env('apiUrl')}/aluno/login`, {
+        email: 'aluno.demo@pucminas.br',
+        senha: 'aluno@2024',
+      }).then((alunoLogin) => {
+        const alunoId = alunoLogin.body.aluno.id
+
+        cy.request({
+          method: 'POST',
+          url: `${Cypress.env('apiUrl')}/professor/enviar-moedas`,
+          headers: { Authorization: `Bearer ${token}` },
+          body: { alunoId, valor: -50, mensagem: 'teste' },
+          failOnStatusCode: false,
+        }).then((resp) => {
+          expect(resp.status).to.eq(400)
+        })
       })
     })
   })

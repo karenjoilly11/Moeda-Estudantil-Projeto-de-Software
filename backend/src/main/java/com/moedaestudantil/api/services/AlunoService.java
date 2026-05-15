@@ -107,10 +107,18 @@ public class AlunoService {
         aluno.setEndereco(dto.getEndereco() != null ? dto.getEndereco() : "");
         aluno.setCurso(dto.getCurso());
 
-        Aluno atualizado = alunoRepository.save(aluno);
-        System.out.println("✅ Perfil atualizado com sucesso!");
-
-        return toResponseDTO(atualizado);
+        try {
+            Aluno atualizado = alunoRepository.save(aluno);
+            System.out.println("✅ Perfil atualizado com sucesso!");
+            return toResponseDTO(atualizado);
+        } catch (DataIntegrityViolationException e) {
+            // P2-N01: não vazar DDL/SQL ao atualizar
+            String causa = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : "";
+            if (causa != null && causa.toLowerCase().contains("email")) {
+                throw new RuntimeException("Email já em uso por outro usuário");
+            }
+            throw new RuntimeException("Não foi possível atualizar: dados conflitam com outro cadastro");
+        }
     }
 
     public AlunoResponseDTO buscarPorId(Long id) {

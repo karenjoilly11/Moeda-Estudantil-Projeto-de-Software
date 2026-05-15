@@ -34,6 +34,16 @@ public class TransacaoService {
 
     @Transactional
     public ResgateResponseDTO resgatar(ResgateRequestDTO dto) {
+        return resgatar(dto, null);
+    }
+
+    // P1-N01: se alunoIdAutenticado != null, exige que o aluno do payload seja o do token
+    @Transactional
+    public ResgateResponseDTO resgatar(ResgateRequestDTO dto, Long alunoIdAutenticado) {
+        if (alunoIdAutenticado != null && !alunoIdAutenticado.equals(dto.getAlunoId())) {
+            throw new SecurityException("Não é permitido resgatar em nome de outro aluno");
+        }
+
         Aluno aluno = alunoRepository.findById(dto.getAlunoId())
                 .orElseThrow(() -> new EntityNotFoundException("Aluno não encontrado!"));
 
@@ -98,10 +108,28 @@ public class TransacaoService {
         return toCupomDTO(t);
     }
 
-    @Transactional
-    public CupomValidacaoDTO utilizarCupom(String codigo) {
+    // P1-N02: valida que o cupom pertence à empresa autenticada
+    public CupomValidacaoDTO validarCupom(String codigo, Long empresaIdAutenticada) {
         Transacao t = transacaoRepository.findByCodigoCupom(codigo)
                 .orElseThrow(() -> new EntityNotFoundException("Cupom não encontrado!"));
+        assertCupomDaEmpresa(t, empresaIdAutenticada);
+        return toCupomDTO(t);
+    }
+
+    @Transactional
+    public CupomValidacaoDTO utilizarCupom(String codigo) {
+        return utilizarCupom(codigo, null);
+    }
+
+    // P1-N02: se empresaIdAutenticada != null, exige que o cupom seja da empresa
+    @Transactional
+    public CupomValidacaoDTO utilizarCupom(String codigo, Long empresaIdAutenticada) {
+        Transacao t = transacaoRepository.findByCodigoCupom(codigo)
+                .orElseThrow(() -> new EntityNotFoundException("Cupom não encontrado!"));
+
+        if (empresaIdAutenticada != null) {
+            assertCupomDaEmpresa(t, empresaIdAutenticada);
+        }
 
         if (!STATUS_PENDENTE.equals(t.getStatus())) {
             throw new IllegalStateException(
@@ -111,6 +139,15 @@ public class TransacaoService {
         t.setStatus(STATUS_UTILIZADO);
         Transacao salva = transacaoRepository.save(t);
         return toCupomDTO(salva);
+    }
+
+    private void assertCupomDaEmpresa(Transacao t, Long empresaIdAutenticada) {
+        Long donaDoCupom = (t.getVantagem() != null && t.getVantagem().getEmpresa() != null)
+                ? t.getVantagem().getEmpresa().getId()
+                : null;
+        if (donaDoCupom == null || !donaDoCupom.equals(empresaIdAutenticada)) {
+            throw new SecurityException("Cupom não pertence à sua empresa");
+        }
     }
 
     public List<CupomValidacaoDTO> cuponsDaEmpresa(Long empresaId) {

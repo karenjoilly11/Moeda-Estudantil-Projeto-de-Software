@@ -2,21 +2,22 @@ package com.moedaestudantil.api.controller;
 
 import com.moedaestudantil.api.dto.ProfessorLoginDTO;
 import com.moedaestudantil.api.services.ProfessorService;
+import com.moedaestudantil.api.util.TokenUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.moedaestudantil.api.dto.EnviarMoedasDTO;
 import com.moedaestudantil.api.dto.EnvioMoedasResponseDTO;
-import java.util.Base64;
 
 @RestController
 @RequestMapping("/api/professor")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:5173")
 public class ProfessorController {
-    
+
     private final ProfessorService professorService;
-    
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody ProfessorLoginDTO dto) {
         try {
@@ -28,74 +29,68 @@ public class ProfessorController {
 
     @PostMapping("/enviar-moedas")
     public ResponseEntity<?> enviarMoedas(@RequestBody EnviarMoedasDTO dto,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
-            Long professorId = extractProfessorIdFromToken(token);
+            Long professorId = extractProfessorIdFromToken(authorization);
             EnvioMoedasResponseDTO response = professorService.enviarMoedas(professorId, dto);
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return mapearErro(e);
         }
     }
 
     @GetMapping("/extrato")
-    public ResponseEntity<?> extrato(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> extrato(@RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
-            Long professorId = extractProfessorIdFromToken(token);
+            Long professorId = extractProfessorIdFromToken(authorization);
             return ResponseEntity.ok(professorService.extrato(professorId));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return mapearErro(e);
         }
     }
 
     @GetMapping("/saldo")
-    public ResponseEntity<?> saldo(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> saldo(@RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
-            Long professorId = extractProfessorIdFromToken(token);
+            Long professorId = extractProfessorIdFromToken(authorization);
             return ResponseEntity.ok(professorService.saldo(professorId));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return mapearErro(e);
         }
     }
 
     @GetMapping("/alunos")
-    public ResponseEntity<?> listarAlunos(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> listarAlunos(@RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
-            Long professorId = extractProfessorIdFromToken(token);
+            Long professorId = extractProfessorIdFromToken(authorization);
             return ResponseEntity.ok(professorService.listarAlunosPorInstituicao(professorId));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return mapearErro(e);
         }
-    }
-
-   // Método auxiliar para extrair professorId do token JWT
-    private Long extractProfessorIdFromToken(String token) {
-        // Remove "Bearer " prefix se existir
-        String jwt = token;
-        if (token.startsWith("Bearer ")) {
-            jwt = token.substring(7);
-        }
-        
-        // Decodifica Base64
-        String decoded = new String(Base64.getDecoder().decode(jwt));
-        
-        // Formato esperado: "email:timestamp"
-        String email = decoded.split(":")[0];
-        
-        // Busca professor por email
-        return professorService.findByEmail(email).getId();
     }
 
     @GetMapping("/alunos/busca")
-    public ResponseEntity<?> buscarAlunos(@RequestHeader("Authorization") String token, 
-                                        @RequestParam String nome) {
+    public ResponseEntity<?> buscarAlunos(@RequestHeader(value = "Authorization", required = false) String authorization,
+                                          @RequestParam String nome) {
         try {
-            Long professorId = extractProfessorIdFromToken(token);
+            Long professorId = extractProfessorIdFromToken(authorization);
             return ResponseEntity.ok(professorService.buscarAlunosPorNome(professorId, nome));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return mapearErro(e);
         }
     }
 
-}
+    private Long extractProfessorIdFromToken(String authorization) {
+        String email = TokenUtil.extractEmail(authorization);
+        return professorService.findByEmail(email).getId();
+    }
 
+    // P2-N04: mapeia erros de token pra 401, demais pra 400
+    private ResponseEntity<?> mapearErro(RuntimeException e) {
+        String msg = e.getMessage();
+        if (msg != null && (msg.contains("Token") || msg.contains("token"))) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(msg);
+        }
+        return ResponseEntity.badRequest().body(msg);
+    }
+}

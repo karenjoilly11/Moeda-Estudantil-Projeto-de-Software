@@ -1,5 +1,6 @@
 package com.moedaestudantil.api.services;
 
+import com.moedaestudantil.api.dto.AlunoResponseDTO;
 import com.moedaestudantil.api.dto.EnvioMoedasResponseDTO;
 import com.moedaestudantil.api.dto.EnviarMoedasDTO;
 import com.moedaestudantil.api.dto.ProfessorLoginDTO;
@@ -147,22 +148,32 @@ public class ProfessorService {
     }
     
    
-    // Listar alunos da mesma instituição
-    public List<Aluno> listarAlunosPorInstituicao(Long professorId) {
+    // P2-N02: retorna DTO sem CPF/RG/saldo
+    public List<AlunoResponseDTO> listarAlunosPorInstituicao(Long professorId) {
         Professor professor = professorRepository.findById(professorId)
                 .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
-        return alunoRepository.findByInstituicaoId(professor.getInstituicao().getId());
+        return alunoRepository.findByInstituicaoId(professor.getInstituicao().getId())
+                .stream().map(this::toAlunoDTO).toList();
     }
-    
-    public List<Aluno> buscarAlunosPorNome(Long professorId, String nome) {
-    Professor professor = professorRepository.findById(professorId)
-            .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
-    
-    // Busca alunos da mesma instituição filtrando pelo nome (ignore case)
-    return alunoRepository.findByInstituicaoIdAndNomeContainingIgnoreCase(
-            professor.getInstituicao().getId(), 
-            nome
-    );
+
+    public List<AlunoResponseDTO> buscarAlunosPorNome(Long professorId, String nome) {
+        Professor professor = professorRepository.findById(professorId)
+                .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
+        return alunoRepository.findByInstituicaoIdAndNomeContainingIgnoreCase(
+                professor.getInstituicao().getId(),
+                nome
+        ).stream().map(this::toAlunoDTO).toList();
+    }
+
+    private AlunoResponseDTO toAlunoDTO(Aluno a) {
+        AlunoResponseDTO dto = new AlunoResponseDTO();
+        dto.setId(a.getId());
+        dto.setNome(a.getNome());
+        dto.setEmail(a.getEmail());
+        dto.setCurso(a.getCurso());
+        dto.setInstituicaoNome(a.getInstituicao() != null ? a.getInstituicao().getNome() : null);
+        // P2-N02: não expor CPF, RG, endereço, saldo, tipo, createdAt
+        return dto;
     }
     
     
