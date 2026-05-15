@@ -1,5 +1,6 @@
 package com.moedaestudantil.api.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.moedaestudantil.api.enums.TipoUsuario;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -26,6 +27,7 @@ public class Usuario {
     private String email;
     
     @Column(nullable = false, length = 255)
+    @JsonIgnore
     private String senha;
     
     @Enumerated(EnumType.STRING)

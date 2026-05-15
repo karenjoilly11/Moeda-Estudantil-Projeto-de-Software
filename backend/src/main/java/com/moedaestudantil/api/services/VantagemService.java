@@ -57,6 +57,12 @@ public class VantagemService {
                 .collect(Collectors.toList());
     }
 
+    public VantagemResponseDTO buscarPorId(Long id) {
+        Vantagem vantagem = vantagemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Vantagem não encontrada!"));
+        return toResponseDTO(vantagem);
+    }
+
     public List<VantagemResponseDTO> listarPorEmpresa(Long empresaId) {
         return vantagemRepository.findByEmpresaIdOrderByCustoMoedasAsc(empresaId)
                 .stream()

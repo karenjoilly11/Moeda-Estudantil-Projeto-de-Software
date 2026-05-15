@@ -11,7 +11,8 @@ import com.moedaestudantil.api.enums.TipoUsuario;
 import com.moedaestudantil.api.repositories.AlunoRepository;
 import com.moedaestudantil.api.repositories.InstituicaoRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.transaction.annotation.Transactional; 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.Base64;
@@ -47,9 +48,20 @@ public class AlunoService {
         aluno.setCurso(dto.getCurso());
         aluno.setSaldoMoedas(0.0);
 
-        Aluno salvo = alunoRepository.save(aluno);
-
-        return toResponseDTO(salvo);
+        try {
+            Aluno salvo = alunoRepository.save(aluno);
+            return toResponseDTO(salvo);
+        } catch (DataIntegrityViolationException e) {
+            // P1-3: não vazar DDL/SQL na mensagem
+            String causa = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : "";
+            if (causa != null && causa.toLowerCase().contains("cpf")) {
+                throw new RuntimeException("CPF já cadastrado");
+            }
+            if (causa != null && causa.toLowerCase().contains("email")) {
+                throw new RuntimeException("Email já cadastrado");
+            }
+            throw new RuntimeException("Dados inválidos ou já existentes");
+        }
     }
 
     public LoginResponseDTO login(LoginRequestDTO dto) {
@@ -105,6 +117,28 @@ public class AlunoService {
         Aluno aluno = alunoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
         return toResponseDTO(aluno);
+    }
+
+    public Aluno findByEmail(String email) {
+        return alunoRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
+    }
+
+    @Transactional
+    public void alterarSenha(Long alunoId, String senhaAtual, String novaSenha) {
+        Aluno aluno = alunoRepository.findById(alunoId)
+                .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
+
+        String senhaAtualCodificada = Base64.getEncoder().encodeToString(senhaAtual.getBytes());
+        if (!aluno.getSenha().equals(senhaAtualCodificada)) {
+            throw new RuntimeException("Senha atual incorreta");
+        }
+        if (novaSenha == null || novaSenha.length() < 4) {
+            throw new RuntimeException("Nova senha deve ter pelo menos 4 caracteres");
+        }
+
+        aluno.setSenha(Base64.getEncoder().encodeToString(novaSenha.getBytes()));
+        alunoRepository.save(aluno);
     }
 
     @Transactional // 🆕 Adicione esta anotação

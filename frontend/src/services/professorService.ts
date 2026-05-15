@@ -19,17 +19,27 @@ export const professorService = {
   },
 
   listarExtrato: async (): Promise<Transacao[]> => {
-    const response = await api.get<Array<{ valor: number; data: string; mensagem: string; aluno: { nome: string } }>>(`/professor/extrato`);
-    return response.data.map((item, index) => ({
-      id: index,
+    const response = await api.get<Array<{
+      id: number;
+      data: string;
+      tipo: "ENVIO" | "RESGATE" | "RECEBIMENTO";
+      valor: number;
+      mensagem: string | null;
+      alunoNome: string | null;
+      professorNome: string | null;
+      codigoCupom: string | null;
+      status: string | null;
+    }>>(`/professor/extrato`);
+    return response.data.map((item) => ({
+      id: item.id,
       data: item.data,
-      tipo: "ENVIO" as const,
+      tipo: item.tipo,
       valor: item.valor,
       mensagem: item.mensagem,
-      alunoNome: item.aluno?.nome || null,
-      professorNome: null,
-      codigoCupom: null,
-      status: null,
+      alunoNome: item.alunoNome,
+      professorNome: item.professorNome,
+      codigoCupom: item.codigoCupom,
+      status: item.status,
     }));
   },
 

@@ -73,6 +73,11 @@ public class EmpresaService {
         return toResponseDTO(empresa);
     }
 
+    public Empresa findByEmail(String email) {
+        return empresaRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+    }
+
     public List<EmpresaResponseDTO> listar() {
         return empresaRepository.findAll().stream()
                 .map(this::toResponseDTO)

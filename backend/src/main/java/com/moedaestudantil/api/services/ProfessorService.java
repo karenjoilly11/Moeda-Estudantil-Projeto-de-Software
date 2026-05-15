@@ -5,6 +5,7 @@ import com.moedaestudantil.api.dto.EnviarMoedasDTO;
 import com.moedaestudantil.api.dto.ProfessorLoginDTO;
 import com.moedaestudantil.api.dto.ProfessorLoginResponseDTO;
 import com.moedaestudantil.api.dto.ProfessorResponseDTO;
+import com.moedaestudantil.api.dto.TransacaoResponseDTO;
 import com.moedaestudantil.api.entities.Aluno;
 import com.moedaestudantil.api.entities.Professor;
 import com.moedaestudantil.api.entities.Transacao;
@@ -67,15 +68,20 @@ public class ProfessorService {
     public EnvioMoedasResponseDTO enviarMoedas(Long professorId, EnviarMoedasDTO dto) {
         Professor professor = professorRepository.findById(professorId)
                 .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
-        
+
         Aluno aluno = alunoRepository.findById(dto.getAlunoId())
                 .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
-        
+
+        // Validar valor positivo (P0-3)
+        if (dto.getValor() == null || dto.getValor() <= 0) {
+            throw new RuntimeException("Valor deve ser maior que zero");
+        }
+
         // Validar saldo
         if (professor.getSaldoMoedas() < dto.getValor()) {
             throw new RuntimeException("Saldo insuficiente");
         }
-        
+
         // Validar mensagem obrigatória
         if (dto.getMensagem() == null || dto.getMensagem().isBlank()) {
             throw new RuntimeException("Mensagem de reconhecimento é obrigatória");
@@ -112,9 +118,25 @@ public class ProfessorService {
         );
     }
     
-    // Consultar extrato de transações
-    public List<Transacao> extrato(Long professorId) {
-        return transacaoRepository.findByProfessorId(professorId);
+    // Consultar extrato de transações (retorna DTO sem senha — P0-2)
+    public List<TransacaoResponseDTO> extrato(Long professorId) {
+        return transacaoRepository.findByProfessorId(professorId).stream()
+                .map(this::toTransacaoDTO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private TransacaoResponseDTO toTransacaoDTO(Transacao t) {
+        TransacaoResponseDTO dto = new TransacaoResponseDTO();
+        dto.setId(t.getId());
+        dto.setData(t.getData());
+        dto.setTipo(t.getTipo());
+        dto.setValor(t.getValor());
+        dto.setMensagem(t.getMensagem());
+        dto.setAlunoNome(t.getAluno() != null ? t.getAluno().getNome() : null);
+        dto.setProfessorNome(t.getProfessor() != null ? t.getProfessor().getNome() : null);
+        dto.setCodigoCupom(t.getCodigoCupom());
+        dto.setStatus(t.getStatus());
+        return dto;
     }
     
     // Consultar saldo atual
