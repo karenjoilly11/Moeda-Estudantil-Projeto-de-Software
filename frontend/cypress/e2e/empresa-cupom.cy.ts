@@ -15,9 +15,11 @@ describe('Empresa - Golden Path (login + validar/utilizar cupom)', () => {
   })
 
   it('fluxo completo: aluno resgata → empresa valida → empresa utiliza', () => {
-    // 0. Empresa loga para pegar token (validar/utilizar exigem auth de empresa)
+    // 0. Empresa loga para pegar token (validar/utilizar exigem auth de empresa).
+    // Usa "livraria" porque o seed inicial vincula vantagens a essa empresa
+    // (parceiro começa sem vantagens). P1-N02 exige que empresa só valide cupons das próprias vantagens.
     cy.request('POST', `${Cypress.env('apiUrl')}/empresa/login`, {
-      email: 'empresa.demo@parceiro.com',
+      email: 'empresa.demo@livraria.com',
       senha: 'empresa@2024',
     }).then((empLogin) => {
       const empToken = empLogin.body.token
@@ -30,15 +32,24 @@ describe('Empresa - Golden Path (login + validar/utilizar cupom)', () => {
         const alunoId = alunoLogin.body.aluno.id
         const alunoToken = alunoLogin.body.token
 
-        cy.request(`${Cypress.env('apiUrl')}/vantagem`).then((vants) => {
-          // Empresa.demo@parceiro.com tem id=7, então usa vantagem da empresa parceiro
-          const vantagem = vants.body.find((v: any) => v.empresaId === empLogin.body.empresa.id) || vants.body[0]
+        // Lista APENAS as vantagens da empresa autenticada — P1-N02 exige que o cupom
+        // pertença à empresa que vai validar/utilizar
+        const empresaId = empLogin.body.empresa.id
+        cy.request({
+          url: `${Cypress.env('apiUrl')}/empresa/${empresaId}/vantagens`,
+          headers: { Authorization: `Bearer ${empToken}` },
+        }).then((vants) => {
+          const minhasVantagens = vants.body as Array<{ id: number; nome: string; custoMoedas: number }>
+          expect(minhasVantagens, 'empresa autenticada precisa ter ao menos 1 vantagem cadastrada').to.have.length.greaterThan(0)
+          const saldoAluno = alunoLogin.body.aluno.saldoMoedas
+          const vantagem = minhasVantagens.find((v) => v.custoMoedas <= saldoAluno)
+          expect(vantagem, 'precisa de uma vantagem com custo <= saldo do aluno').to.exist
 
           cy.request({
             method: 'POST',
             url: `${Cypress.env('apiUrl')}/transacao/resgatar`,
             headers: { Authorization: `Bearer ${alunoToken}` },
-            body: { alunoId, vantagemId: vantagem.id },
+            body: { alunoId, vantagemId: vantagem!.id },
           }).then((resg) => {
             const cupom = resg.body.codigoCupom
             expect(cupom).to.have.length(8)
