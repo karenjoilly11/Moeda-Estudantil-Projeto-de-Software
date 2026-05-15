@@ -39,9 +39,11 @@ describe('Professor - Golden Path (login + envio de moedas)', () => {
           headers: { Authorization: `Bearer ${token}` },
           body: { alunoId, valor: 25, mensagem: 'Teste E2E Cypress' },
         }).then((envResp) => {
+          // EnvioMoedasResponseDTO: { transacaoId, alunoNome, valor, saldoRestanteProfessor, dataEnvio }
           expect(envResp.status).to.eq(200)
-          expect(envResp.body.tipo).to.eq('ENVIO')
           expect(envResp.body.valor).to.eq(25)
+          expect(envResp.body.alunoNome).to.not.be.empty
+          expect(envResp.body.saldoRestanteProfessor).to.eq(saldoProfAntes - 25)
 
           // Verifica saldos atualizados
           cy.request('POST', `${Cypress.env('apiUrl')}/aluno/login`, {

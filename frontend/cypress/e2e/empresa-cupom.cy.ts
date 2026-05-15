@@ -22,19 +22,23 @@ describe('Empresa - Golden Path (login + validar/utilizar cupom)', () => {
     }).then((empLogin) => {
       const empToken = empLogin.body.token
 
-      // 1. Aluno gera cupom via API
+      // 1. Aluno gera cupom via API (resgate exige auth do próprio aluno - P1-N01)
       cy.request('POST', `${Cypress.env('apiUrl')}/aluno/login`, {
         email: 'aluno.demo@pucminas.br',
         senha: 'aluno@2024',
       }).then((alunoLogin) => {
         const alunoId = alunoLogin.body.aluno.id
+        const alunoToken = alunoLogin.body.token
 
         cy.request(`${Cypress.env('apiUrl')}/vantagem`).then((vants) => {
-          const vantagem = vants.body[0]
+          // Empresa.demo@parceiro.com tem id=7, então usa vantagem da empresa parceiro
+          const vantagem = vants.body.find((v: any) => v.empresaId === empLogin.body.empresa.id) || vants.body[0]
 
-          cy.request('POST', `${Cypress.env('apiUrl')}/transacao/resgatar`, {
-            alunoId,
-            vantagemId: vantagem.id,
+          cy.request({
+            method: 'POST',
+            url: `${Cypress.env('apiUrl')}/transacao/resgatar`,
+            headers: { Authorization: `Bearer ${alunoToken}` },
+            body: { alunoId, vantagemId: vantagem.id },
           }).then((resg) => {
             const cupom = resg.body.codigoCupom
             expect(cupom).to.have.length(8)

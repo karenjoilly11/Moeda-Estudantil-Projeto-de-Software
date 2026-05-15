@@ -32,7 +32,7 @@ describe('Aluno - Golden Path (login + ver dashboard)', () => {
   })
 
   it('aluno resgata vantagem via API + recebe cupom com 8 chars', () => {
-    // Login para pegar id (usando API, sem UI)
+    // Login para pegar id + token (resgate exige auth do próprio aluno - P1-N01)
     cy.request('POST', `${Cypress.env('apiUrl')}/aluno/login`, {
       email: 'aluno.demo@pucminas.br',
       senha: 'aluno@2024',
@@ -40,16 +40,19 @@ describe('Aluno - Golden Path (login + ver dashboard)', () => {
       expect(loginResp.status).to.eq(200)
       const alunoId = loginResp.body.aluno.id
       const saldoInicial = loginResp.body.aluno.saldoMoedas
+      const alunoToken = loginResp.body.token
 
       // Listar vantagens
       cy.request(`${Cypress.env('apiUrl')}/vantagem`).then((vantResp) => {
         const vantagem = vantResp.body.find((v: any) => v.custoMoedas <= saldoInicial)
         expect(vantagem, 'precisa de uma vantagem com custo <= saldo').to.exist
 
-        // Resgatar
-        cy.request('POST', `${Cypress.env('apiUrl')}/transacao/resgatar`, {
-          alunoId,
-          vantagemId: vantagem.id,
+        // Resgatar com token do aluno (P1-N01: endpoint exige auth)
+        cy.request({
+          method: 'POST',
+          url: `${Cypress.env('apiUrl')}/transacao/resgatar`,
+          headers: { Authorization: `Bearer ${alunoToken}` },
+          body: { alunoId, vantagemId: vantagem.id },
         }).then((resgResp) => {
           expect(resgResp.status).to.eq(200)
           expect(resgResp.body.codigoCupom).to.have.length(8)
