@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/vantagem")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class VantagemController {
 
     private final VantagemService vantagemService;

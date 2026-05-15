@@ -1,7 +1,7 @@
 import type { UserRole } from "@/types/api";
 
 export const API_BASE =
-  (import.meta as any).env?.VITE_API_URL || "http://localhost:8080/api";
+  (import.meta as any).env?.VITE_API_URL || "http://localhost:8081/api";
 
 const TOKEN_KEY = "auth_token";
 const ROLE_KEY = "auth_role";

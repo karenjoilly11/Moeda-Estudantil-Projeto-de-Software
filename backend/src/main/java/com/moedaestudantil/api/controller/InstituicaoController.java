@@ -10,7 +10,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/instituicoes")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class InstituicaoController {
     
     private final InstituicaoRepository instituicaoRepository;

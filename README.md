@@ -67,21 +67,100 @@
 
 | Camada | Tecnologias |
 |--------|-------------|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Framer Motion, Axios |
-| **Backend** | Java 21, Spring Boot 3.4.4, Spring Data JPA, H2 Database |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Framer Motion |
+| **Backend** | Java 21, Spring Boot 3.4.4, Spring Data JPA |
+| **Banco** | PostgreSQL 16 (produção/Docker) · H2 file-based (dev local sem Docker) |
+| **Testes** | JUnit 5 + Mockito (backend, 19 testes) · Cypress 13 (E2E, 3 specs) |
+| **Infra** | Docker + Docker Compose · Nginx (serve SPA + proxy `/api`) |
+| **CI/CD** | GitHub Actions (workflows JUnit, Cypress, e stack dockerizada) |
 | **Ferramentas** | Maven, Git, npm |
 
 ---
 
-## 📋 Pré-requisitos
+## 🐳 Rodando com Docker (recomendado)
+
+**Pré-requisitos:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) ou Docker Engine + plugin Compose (Linux). ~4 GB de RAM disponíveis.
+
+### Modo demo / apresentação
+
+Sobe Postgres + backend Spring Boot + frontend buildado servido por Nginx:
+
+```powershell
+docker compose up --build
+```
+
+- 🌐 Frontend: **http://localhost**
+- 🔌 Backend:  **http://localhost:8081/api**
+
+Em ~40 s o stack está pronto. Faça login com qualquer seed da seção [Credenciais de seed](#-credenciais-de-seed).
+
+### Modo desenvolvimento (com hot reload)
+
+Sobe o mesmo stack, mas com o Vite dev server em vez do Nginx — editar arquivos em `frontend/src/` reflete no browser em <2 s:
+
+```powershell
+docker compose -f docker-compose.dev.yml up --build
+```
+
+- 🌐 Frontend: **http://localhost:5173** (Vite + HMR)
+- 🔌 Backend:  **http://localhost:8081/api**
+- 🗄️ Postgres: **localhost:5432** (acessível via DBeaver/psql — user `moeda`, db `moeda_estudantil`, senha `moeda`)
+
+### Resetar dados
+
+Os dados persistem em volume nomeado `moeda-postgres-data` entre reinícios. Pra zerar:
+
+```powershell
+docker compose down -v       # remove volume
+docker compose up --build    # DataInitializer recria seeds
+```
+
+### 🔑 Credenciais de seed
+
+Carregados automaticamente pelo `DataInitializer.java` na primeira subida:
+
+| Perfil      | E-mail                          | Senha            |
+|-------------|---------------------------------|------------------|
+| Aluno       | `aluno.demo@pucminas.br`        | `aluno@2024`     |
+| Professor   | `professor.demo@pucminas.br`    | `professor@2024` |
+| Empresa A   | `empresa.demo@parceiro.com`     | `empresa@2024`   |
+| Empresa B   | `empresa.demo@livraria.com`     | `empresa@2024`   |
+
+### Arquitetura em produção
+
+```
+Browser ──:80──▶ nginx (SPA + proxy /api/*) ──▶ Spring Boot :8081 ──JDBC──▶ PostgreSQL 16
+```
+
+O bundle do frontend é buildado com `VITE_API_URL=/api` (path relativo). O Nginx faz reverse-proxy de `/api/*` → `backend:8081/api/*` na network do compose — resultado: **zero CORS preflight em produção** (same-origin).
+
+Em dev (Vite em :5173), o backend libera CORS pra `http://localhost:5173` via `WebConfig.java` (origens configuráveis pela env `CORS_ALLOWED_ORIGINS`).
+
+### Variáveis de ambiente
+
+Defaults sensatos no compose. Pra customizar, copie `.env.example` → `.env`:
+
+| Variável                | Default              |
+|-------------------------|----------------------|
+| `POSTGRES_DB`           | `moeda_estudantil`   |
+| `POSTGRES_USER`         | `moeda`              |
+| `POSTGRES_PASSWORD`     | `moeda`              |
+| `CORS_ALLOWED_ORIGINS`  | depende do compose   |
+| `MAIL_ENABLED`          | `false`              |
+
+---
+
+## 📋 Pré-requisitos (rodando SEM Docker)
 
 Antes de começar, você vai precisar ter instalado em sua máquina:
 
 - Java JDK 21+
-- Maven
-- Node.js 18+
-- npm ou yarn
+- Maven (ou usar o wrapper `./mvnw` que já vem no repo)
+- Node.js 20+
+- npm
 - Git
+
+> Sem Docker, o backend usa **H2 file-based** em `~/.moeda-estudantil/` (não precisa instalar PostgreSQL).
 
 ---
 

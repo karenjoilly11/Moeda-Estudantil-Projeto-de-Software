@@ -13,7 +13,6 @@ import com.moedaestudantil.api.dto.EnvioMoedasResponseDTO;
 @RestController
 @RequestMapping("/api/professor")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class ProfessorController {
 
     private final ProfessorService professorService;

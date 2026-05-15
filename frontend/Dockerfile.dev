@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1.7
+# Dockerfile.dev — usado pelo docker-compose.dev.yml com bind mount.
+# O código fonte vem por volume; aqui só preparamos node + deps.
+
+FROM node:20-alpine
+WORKDIR /app
+
+# Instala deps em layer separada (cache). O docker-compose.dev.yml monta
+# um volume anônimo em /app/node_modules pra evitar que o bind mount
+# do host sobrescreva os node_modules instalados aqui.
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+# Vite precisa de --host 0.0.0.0 pra aceitar conexões externas ao container.
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
