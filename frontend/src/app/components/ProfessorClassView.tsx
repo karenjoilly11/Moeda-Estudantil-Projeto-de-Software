@@ -75,7 +75,7 @@ export function ProfessorClassView({ professor, onLogout }: ProfessorClassViewPr
       const resp = await professorService.enviarMoedas({
         professorId: professor.id,
         alunoId: selectedStudent.id,
-        quantidade: quickSendAmount,
+        valor: quickSendAmount,
         mensagem: message || "Reconhecimento pelo bom trabalho!"
       });
       

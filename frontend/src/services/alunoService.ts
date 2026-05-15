@@ -3,12 +3,11 @@ import type { Aluno, LoginResponse, Vantagem, Transacao } from "@/types/api";
 
 export const alunoService = {
   login: async (email: string, senha: string): Promise<Aluno> => {
-    const resp = await api.post<LoginResponse>("/aluno/login", { email, senha });
-    setToken(resp.token);
+    const response = await api.post<LoginResponse>("/aluno/login", { email, senha });
+    setToken(response.data.token);
     setRole('aluno');
-    console.log("✅ Aluno logado:", resp.aluno);
-    setStoredUser(resp.aluno);
-    return resp.aluno;
+    setStoredUser(response.data.aluno);
+    return response.data.aluno;
   },
 
   logout: () => {
@@ -25,7 +24,7 @@ export const alunoService = {
     senha: string;
     instituicaoId: number;
   }): Promise<Aluno> => {
-    const response = await api.post("/aluno/cadastro", dados) as { data: Aluno };
+    const response = await api.post<Aluno>("/aluno/cadastro", dados);
     return response.data;
   },
 
@@ -36,24 +35,22 @@ export const alunoService = {
     curso: string;
   }): Promise<Aluno> => {
     const aluno = getStoredUser<Aluno>();
-    
     if (!aluno?.id) {
       throw new Error("ID do aluno não encontrado");
     }
-
-    const response = await api.put(`/aluno/perfil/${aluno.id}`, dados);
-    return response.data; // ⚠️ IMPORTANTE: response.data, não response
+    const response = await api.put<Aluno>(`/aluno/perfil/${aluno.id}`, dados);
+    return response.data;
   },
 
   alterarSenha: async (dados: {
     senhaAtual: string;
     novaSenha: string;
   }): Promise<void> => {
-    await api.put("/aluno/senha", dados);
+    await api.put<void>("/aluno/senha", dados);
   },
 
   excluirConta: async (alunoId: number): Promise<void> => {
-    await api.delete(`/aluno/${alunoId}`);
+    await api.del<void>(`/aluno/${alunoId}`);
     clearAuth();
   },
 
@@ -67,11 +64,18 @@ export const alunoService = {
     setStoredUser(aluno);
   },
 
-  listarVantagens: () => api.get<Vantagem[]>("/vantagem"),
+  listarVantagens: async (): Promise<Vantagem[]> => {
+    const response = await api.get<Vantagem[]>("/vantagem");
+    return response.data;
+  },
 
-  listarExtrato: (alunoId: number) =>
-    api.get<Transacao[]>(`/transacao/extrato/${alunoId}`),
+  listarExtrato: async (alunoId: number): Promise<Transacao[]> => {
+    const response = await api.get<Transacao[]>(`/transacao/extrato/${alunoId}`);
+    return response.data;
+  },
 
-  buscarDados: (alunoId: number) =>
-    api.get<Aluno>(`/aluno/${alunoId}`),
+  buscarDados: async (alunoId: number): Promise<Aluno> => {
+    const response = await api.get<Aluno>(`/aluno/${alunoId}`);
+    return response.data;
+  },
 };

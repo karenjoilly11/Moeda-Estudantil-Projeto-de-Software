@@ -1,9 +1,9 @@
 import { api, setToken, setRole, setStoredUser, clearAuth, getToken, getRole, getStoredUser } from "@/lib/api";
-import type { 
-  UserRole, 
-  Aluno, 
-  Professor, 
-  Empresa, 
+import type {
+  UserRole,
+  Aluno,
+  Professor,
+  Empresa,
   AuthUser,
   LoginResponse,
   ProfessorLoginResponse,
@@ -12,44 +12,44 @@ import type {
 
 export const authService = {
   loginAluno: async (email: string, senha: string): Promise<AuthUser> => {
-    const resp = await api.post<LoginResponse>("/aluno/login", { email, senha });
-    setToken(resp.token);
+    const response = await api.post<LoginResponse>("/aluno/login", { email, senha });
+    setToken(response.data.token);
     setRole('aluno');
-    setStoredUser(resp.aluno);
+    setStoredUser(response.data.aluno);
     return {
-      id: resp.aluno.id,
-      nome: resp.aluno.nome,
-      email: resp.aluno.email,
+      id: response.data.aluno.id,
+      nome: response.data.aluno.nome,
+      email: response.data.aluno.email,
       role: 'aluno',
-      data: resp.aluno
+      data: response.data.aluno
     };
   },
 
   loginProfessor: async (email: string, senha: string): Promise<AuthUser> => {
-    const resp = await api.post<ProfessorLoginResponse>("/professor/login", { email, senha });
-    setToken(resp.token);
+    const response = await api.post<ProfessorLoginResponse>("/professor/login", { email, senha });
+    setToken(response.data.token);
     setRole('professor');
-    setStoredUser(resp.professor);
+    setStoredUser(response.data.professor);
     return {
-      id: resp.professor.id,
-      nome: resp.professor.nome,
-      email: resp.professor.email,
+      id: response.data.professor.id,
+      nome: response.data.professor.nome,
+      email: response.data.professor.email,
       role: 'professor',
-      data: resp.professor
+      data: response.data.professor
     };
   },
 
   loginEmpresa: async (email: string, senha: string): Promise<AuthUser> => {
-    const resp = await api.post<EmpresaLoginResponse>("/empresa/login", { email, senha });
-    setToken(resp.token);
+    const response = await api.post<EmpresaLoginResponse>("/empresa/login", { email, senha });
+    setToken(response.data.token);
     setRole('empresa');
-    setStoredUser(resp.empresa);
+    setStoredUser(response.data.empresa);
     return {
-      id: resp.empresa.id,
-      nome: resp.empresa.nome,
-      email: resp.empresa.email,
+      id: response.data.empresa.id,
+      nome: response.data.empresa.nome,
+      email: response.data.empresa.email,
       role: 'empresa',
-      data: resp.empresa
+      data: response.data.empresa
     };
   },
 

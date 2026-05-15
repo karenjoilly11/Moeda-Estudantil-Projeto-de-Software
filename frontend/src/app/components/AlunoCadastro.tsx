@@ -46,9 +46,8 @@ const formatarCPF = (value: string): string => {
   useEffect(() => {
     const carregarInstituicoes = async () => {
       try {
-        const instituicoesData = await api.get<Instituicao[]>('/instituicoes');
-        console.log('Instituições carregadas:', instituicoesData);
-        setInstituicoes(instituicoesData);
+        const response = await api.get<Instituicao[]>('/instituicoes');
+        setInstituicoes(response.data);
       } catch (err) {
         console.error('Erro ao carregar instituições', err);
       }

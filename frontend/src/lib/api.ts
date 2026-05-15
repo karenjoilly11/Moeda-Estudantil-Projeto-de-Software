@@ -63,11 +63,17 @@ export class ApiError extends Error {
   }
 }
 
+export interface ApiResponse<T> {
+  data: T;
+  status: number;
+  ok: boolean;
+}
+
 async function request<T>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   endpoint: string,
   data?: unknown,
-): Promise<T> {
+): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -86,12 +92,13 @@ async function request<T>(
     const msg = typeof body === "string" ? body : `HTTP ${response.status}`;
     throw new ApiError(response.status, body, msg);
   }
-  return body as T;
+  return { data: body as T, status: response.status, ok: response.ok };
 }
 
 export const api = {
-  get:  <T,>(endpoint: string)            => request<T>("GET",  endpoint),
-  post: <T,>(endpoint: string, data?: any) => request<T>("POST", endpoint, data),
-  put:  <T,>(endpoint: string, data?: any) => request<T>("PUT",  endpoint, data),
-  del:  <T,>(endpoint: string)            => request<T>("DELETE", endpoint),
+  get:    <T,>(endpoint: string)             => request<T>("GET",    endpoint),
+  post:   <T,>(endpoint: string, data?: any) => request<T>("POST",   endpoint, data),
+  put:    <T,>(endpoint: string, data?: any) => request<T>("PUT",    endpoint, data),
+  del:    <T,>(endpoint: string)             => request<T>("DELETE", endpoint),
+  delete: <T,>(endpoint: string)             => request<T>("DELETE", endpoint),
 };
