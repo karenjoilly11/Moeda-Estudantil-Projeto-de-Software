@@ -21,17 +21,11 @@ export const empresaService = {
   },
 
   login: async (email: string, senha: string): Promise<Empresa> => {
-  const response = await api.post<LoginResponse>("/empresa/login", { email, senha });
-  
-  console.log("🔍 Resposta do login:", response.data);
-  console.log("🔍 Empresa retornada:", response.data.empresa);
-  console.log("🔍 ID da empresa:", response.data.empresa?.id);
-  
-  setToken(response.data.token);
-  localStorage.setItem("empresa_data", JSON.stringify(response.data.empresa));
-  
-  return response.data.empresa;
-},
+    const response = await api.post<LoginResponse>("/empresa/login", { email, senha });
+    setToken(response.data.token);
+    localStorage.setItem("empresa_data", JSON.stringify(response.data.empresa));
+    return response.data.empresa;
+  },
 
   logout: () => {
     clearAuth();
@@ -55,7 +49,18 @@ export const empresaService = {
 
   listarVantagens: async (empresaId: number): Promise<Vantagem[]> => {
     const response = await api.get<Vantagem[]>(`/empresa/${empresaId}/vantagens`);
-    return response.data;
+    return response.data.map((item) => ({
+      id: item.id,
+      nome: item.nome,
+      descricao: item.descricao,
+      foto: item.foto || "",
+      custoMoedas: item.custoMoedas,
+      estoque: item.estoque,
+      categoria: item.categoria,
+      instituicaoNome: item.instituicaoNome || "",
+      empresaId: item.empresaId,
+      instituicaoId: item.instituicaoId,
+    }));
   },
 
   listarCupons: async (empresaId: number): Promise<CupomValidacao[]> => {
@@ -74,7 +79,7 @@ export const empresaService = {
   },
 
   removerVantagem: async (vantagemId: number): Promise<void> => {
-    await api.del(`/vantagem/${vantagemId}`);
+    await api.del<void>(`/vantagem/${vantagemId}`);
   },
 
   validarCupom: async (codigo: string): Promise<CupomValidacao> => {
@@ -93,28 +98,21 @@ export const empresaService = {
   },
 
   atualizarPerfil: async (
-  empresaId: number,
-  dados: {
-    nome: string;
-    email: string;
-    telefone: string;
-    endereco: string;
-    descricao: string;
-  }
-): Promise<Empresa> => {
+    empresaId: number,
+    dados: {
+      nome: string;
+      email: string;
+      telefone: string;
+      endereco: string;
+      descricao: string;
+    }
+  ): Promise<Empresa> => {
+    const response = await api.put<Empresa>(`/empresa/perfil/${empresaId}`, dados);
+    return response.data;
+  },
 
-  console.log("🔍 Atualizando empresa ID:", empresaId);
-
-  const response = await api.put<Empresa>(
-    `/empresa/perfil/${empresaId}`,
-    dados
-  );
-
-  return response.data;
-},
-  
   excluirConta: async (empresaId: number): Promise<void> => {
-    await api.del(`/empresa/${empresaId}`);
+    await api.del<void>(`/empresa/${empresaId}`);
     clearAuth();
   },
 };
