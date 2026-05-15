@@ -92,6 +92,11 @@ jobs:
           wait-on: 'http://localhost:5173'
           wait-on-timeout: 120
           browser: chrome
+          # Grava o run no Cypress Cloud (dashboard com vídeos, screenshots, gráficos)
+          record: true
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Cypress screenshots on failure
         if: failure()
