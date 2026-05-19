@@ -1,4 +1,4 @@
-package com.moedaestudantil.api.dto.event;
+package com.emailservice.dto;
 
 public record EmailRecebimentoMoedaEvent(
 
