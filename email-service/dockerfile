@@ -1,0 +1,47 @@
+# =========================================================
+# BUILD STAGE
+# =========================================================
+
+FROM eclipse-temurin:21-jdk-alpine AS builder
+
+WORKDIR /app
+
+# Copia arquivos do Maven
+COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
+
+# Dá permissão
+RUN chmod +x mvnw
+
+# Baixa dependências primeiro (cache Docker)
+RUN ./mvnw dependency:go-offline
+
+# Copia código
+COPY src src
+
+# Build
+RUN ./mvnw clean package -DskipTests
+
+# =========================================================
+# RUNTIME STAGE
+# =========================================================
+
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+# Timezone opcional
+ENV TZ=America/Sao_Paulo
+
+# Copia JAR gerado
+COPY --from=builder /app/target/*.jar app.jar
+
+# Porta do microserviço
+EXPOSE 8082
+
+# Healthcheck opcional
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD wget --quiet --tries=1 --spider http://localhost:8082/actuator/health || exit 1
+
+# Inicialização
+ENTRYPOINT ["java", "-jar", "app.jar"]
