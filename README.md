@@ -77,6 +77,24 @@
 
 ---
 
+## ☁️ Deploy em Produção (Render)
+
+A aplicação está disponível online e pode ser acessada pelos links abaixo:
+
+### 🌐 Frontend (Aplicação Web)
+
+- 🌐 [Frontend](https://moeda-frontend.onrender.com)
+
+### 🔌 Backend (API REST)
+
+- 🔌 [Backend](https://moeda-backend-9bb0.onrender.com)
+
+### 🗄️ Banco de Dados
+
+PostgreSQL hospedado no Render.
+
+---
+
 ## 🐳 Rodando com Docker (recomendado)
 
 **Pré-requisitos:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) ou Docker Engine + plugin Compose (Linux). ~4 GB de RAM disponíveis.
@@ -197,6 +215,16 @@ npm install
 # Execute o projeto
 npm run dev
 ```
+
+---
+
+## 📌 Observações
+
+- Os serviços gratuitos do Render entram em modo de hibernação após alguns minutos de inatividade.
+- O primeiro acesso pode levar entre 30 e 60 segundos para carregar.
+- O PostgreSQL possui persistência automática dos dados.
+- O frontend é servido pelo Nginx e o backend é executado em contêiner Docker.
+- O sistema está preparado para uso em produção e demonstração acadêmica.
 
 ---
 
