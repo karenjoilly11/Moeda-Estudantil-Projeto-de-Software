@@ -234,4 +234,4 @@ moeda-estudantil/
 - [Diagrama de Classe](./Modelagem/Classe/Moeda%20Estudantil%20-%20Diagrama%20de%20Classe%20-%20Sprint%203.png)
 - [Diagrama de Componentes](./Modelagem/Componentes/Componentes%20-%20Moeda%20Estudantil%20-%20Sprint%203.drawio.png)
 - [Histórias de Usuário em PDF](./docs/historias-de-usuario/historias-de-usuario.pdf)
-- [Apresentação com Slides](./Apresentação/Moeda Estudantil - Slide Apresentação - Projeto de Software.pdf)
+- [Apresentação com Slides](./Apresentação/Moeda%20Estudantil%20-%20Slide%20Apresentac%CC%A7a%CC%83o%20-%20Projeto%20de%20Software.pdf)
