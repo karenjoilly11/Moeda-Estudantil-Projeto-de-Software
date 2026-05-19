@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { SketchCard } from "./SketchCard";
 import { SketchButton } from "./SketchButton";
 import { SketchBadge } from "./SketchBadge";
@@ -7,7 +7,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { transacaoService } from "@/services/transacaoService";
 import { useConfetti } from "@/hooks/useConfetti";
 import { ApiError } from "@/lib/api";
+import { Camera, X } from "lucide-react";
+import { Html5QrcodeScanner } from "html5-qrcode";
 import type { CupomValidacao } from "@/types/api";
+import QRCode from "react-qr-code";
 
 const formatarData = (iso: string | null) => {
   if (!iso) return "";
@@ -36,8 +39,54 @@ export function CouponValidation() {
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [recentes, setRecentes] = useState<ValidacaoLocal[]>([]);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerContainerId = "qr-scanner-container";
 
   const { fireSuccess, fireSideExplosion } = useConfetti();
+
+  useEffect(() => {
+    if (showScanner && !scannerRef.current) {
+      scannerRef.current = new Html5QrcodeScanner(
+        scannerContainerId,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          rememberLastUsedCamera: true,
+          showTorchButtonIfSupported: true,
+        },
+        false
+      );
+
+      scannerRef.current.render(onScanSuccess, onScanError);
+    }
+
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
+    };
+  }, [showScanner]);
+
+  const onScanSuccess = async (decodedText: string) => {
+    if (!scanning && !carregando) {
+      setScanning(true);
+      setCouponCode(decodedText.toUpperCase());
+      await handleValidate(decodedText);
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
+        setShowScanner(false);
+      }
+      setScanning(false);
+    }
+  };
+
+  const onScanError = (error: any) => {
+    console.warn("Erro no scanner:", error);
+  };
 
   const handleValidate = async () => {
     if (!couponCode.trim()) return;
@@ -46,10 +95,10 @@ export function CouponValidation() {
     try {
       const resp = await transacaoService.validarCupom(couponCode.trim().toUpperCase());
       setValidatedCoupon(resp);
-      
+
       // Dispara confete de sucesso
       fireSuccess();
-      
+
       setRecentes((prev) =>
         [
           {
@@ -99,13 +148,52 @@ export function CouponValidation() {
           className="text-sm text-gray-600 italic mb-6"
           style={{ fontFamily: "'Architects Daughter', cursive" }}
         >
-          o aluno apresenta o codigo - voce valida na hora
+
+          Digite o codigo do cupom ou use a camera para ler o QR code
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Validation Area */}
           <div className="lg:col-span-2">
             <SketchCard className="p-4 sm:p-6">
+              {/* Toggle entre digitação manual e leitura QR Code */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setShowScanner(false)}
+                  className={`flex-1 py-2 px-4 border-2 border-black transition-all ${!showScanner
+                    ? "bg-[#1A1A1A] text-white"
+                    : "bg-white text-[#1A1A1A] hover:bg-gray-100"
+                    }`}
+                  style={{ borderRadius: "6px 8px 5px 7px", fontFamily: "'Architects Daughter', cursive" }}
+                >
+                  Digitar código
+                </button>
+                <button
+                  onClick={() => setShowScanner(true)}
+                  className={`flex-1 py-2 px-4 border-2 border-black transition-all flex items-center justify-center gap-2 ${showScanner
+                    ? "bg-[#1A1A1A] text-white"
+                    : "bg-white text-[#1A1A1A] hover:bg-gray-100"
+                    }`}
+                  style={{ borderRadius: "6px 8px 5px 7px", fontFamily: "'Architects Daughter', cursive" }}
+                >
+                  <Camera size={18} />
+                  Ler QR Code
+                </button>
+              </div>
+              {/* Modo de leitura QR Code */}
+              {showScanner && (
+                <div className="mb-4">
+                  <div className="w-full max-w-md mx-auto">
+                    <div id={scannerContainerId} className="rounded-lg overflow-hidden" />
+                  </div>
+                  <p
+                    className="text-xs text-center text-gray-500 mt-2"
+                    style={{ fontFamily: "'Architects Daughter', cursive" }}
+                  >
+                    posicione o QR Code do cupom no centro da câmera
+                  </p>
+                </div>
+              )}
               <h3
                 className="text-base sm:text-lg mb-4 italic font-semibold"
                 style={{ fontFamily: "'Architects Daughter', cursive" }}
@@ -272,7 +360,7 @@ export function CouponValidation() {
 
             <SketchCard className="p-4">
               {recentes.length === 0 && (
-                <SketchEmptyState 
+                <SketchEmptyState
                   variant="history"
                   title="nenhuma validacao ainda"
                   description="cupons validados aparecerao aqui"

@@ -6,6 +6,7 @@ import { SketchBadge } from "./SketchBadge";
 import { SketchInput } from './SketchInput';
 import { SketchEmptyState } from "./SketchEmptyState";
 import { Navbar } from "./Navbar";
+import QRCode from "react-qr-code";
 import { 
   SketchProductCardSkeleton, 
   SketchListSkeleton 
@@ -890,25 +891,36 @@ const handleExcluirConta = async () => {
                   </p>
 
                   <p
-                    className="text-xs text-gray-600 mb-2 italic"
-                    style={{ fontFamily: "'Architects Daughter', cursive" }}
-                  >
-                    apresente este codigo no estabelecimento:
-                  </p>
+  className="text-xs text-gray-600 mb-2 italic"
+  style={{ fontFamily: "'Architects Daughter', cursive" }}
+>
+  apresente este codigo no estabelecimento:
+</p>
 
-                  <motion.button
-                    onClick={copiarCupom}
-                    className="w-full text-2xl sm:text-3xl tracking-widest py-4 px-6 bg-white border-[2.5px] border-black mb-4 cursor-pointer hover:bg-[#FFF7DD] transition-colors flex items-center justify-center gap-3"
-                    style={{
-                      borderRadius: "8px 12px 6px 10px",
-                      fontFamily: "'Courier New', monospace",
-                      fontWeight: 700,
-                    }}
-                    title="clique para copiar"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {cupomGerado.codigoCupom}
+{/* QR Code do cupom */}
+<div className="flex justify-center mb-4">
+  <div className="bg-white p-4 border-[2px] border-black rounded-lg">
+    <QRCode
+      value={cupomGerado.codigoCupom}
+      size={180}
+      level="H"
+    />
+  </div>
+</div>
+
+<motion.button
+  onClick={copiarCupom}
+  className="w-full text-2xl sm:text-3xl tracking-widest py-4 px-6 bg-white border-[2.5px] border-black mb-4 cursor-pointer hover:bg-[#FFF7DD] transition-colors flex items-center justify-center gap-3"
+  style={{
+    borderRadius: "8px 12px 6px 10px",
+    fontFamily: "'Courier New', monospace",
+    fontWeight: 700,
+  }}
+  title="clique para copiar"
+  whileHover={{ scale: 1.02 }}
+  whileTap={{ scale: 0.98 }}
+>
+  {cupomGerado.codigoCupom}
                     <AnimatePresence mode="wait">
                       {copiedCupom ? (
                         <motion.div
