@@ -22,254 +22,80 @@ import java.nio.charset.StandardCharsets;
 public class EmailService {
 
     private final JavaMailSender mailSender;
-
     private final TemplateEngine templateEngine;
 
     @Value("${app.email.from}")
     private String from;
 
-    // =========================================================
-    // RECEBIMENTO DE MOEDAS
-    // =========================================================
-
-    public void enviarRecebimentoMoeda(
-            EmailRecebimentoMoedaEvent event
-    ) {
-
+    public void enviarRecebimentoMoeda(EmailRecebimentoMoedaEvent event) {
         Context ctx = new Context();
+        ctx.setVariable("alunoNome", event.alunoNome());
+        ctx.setVariable("professorNome", event.professorNome());
+        ctx.setVariable("valor", event.valor());
+        ctx.setVariable("mensagem", event.mensagem());
 
-        ctx.setVariable(
-                "alunoNome",
-                event.alunoNome()
-        );
-
-        ctx.setVariable(
-                "professorNome",
-                event.professorNome()
-        );
-
-        ctx.setVariable(
-                "valor",
-                event.valor()
-        );
-
-        ctx.setVariable(
-                "mensagem",
-                event.mensagem()
-        );
-
-        String html =
-                templateEngine.process(
-                        "email-recebimento-moeda",
-                        ctx
-                );
-
-        enviarHtml(
-                event.alunoEmail(),
-                "Você recebeu moedas estudantis!",
-                html
-        );
+        String html = templateEngine.process("email-recebimento-moeda", ctx);
+        enviarHtml(event.alunoEmail(), "Você recebeu moedas estudantis!", html);
     }
 
-    // =========================================================
-    // ENVIO CONFIRMADO PROFESSOR
-    // =========================================================
-
-    public void enviarConfirmacaoEnvio(
-            EmailEnvioMoedaEvent event
-    ) {
-
+    public void enviarConfirmacaoEnvio(EmailEnvioMoedaEvent event) {
         Context ctx = new Context();
+        ctx.setVariable("professorNome", event.professorNome());
+        ctx.setVariable("alunoNome", event.alunoNome());
+        ctx.setVariable("valor", event.valor());
+        ctx.setVariable("mensagem", event.mensagem());
+        ctx.setVariable("saldoRestante", event.saldoRestante());
 
-        ctx.setVariable(
-                "professorNome",
-                event.professorNome()
-        );
-
-        ctx.setVariable(
-                "alunoNome",
-                event.alunoNome()
-        );
-
-        ctx.setVariable(
-                "valor",
-                event.valor()
-        );
-
-        ctx.setVariable(
-                "mensagem",
-                event.mensagem()
-        );
-
-        ctx.setVariable(
-                "saldoRestante",
-                event.saldoRestante()
-        );
-
-        String html =
-                templateEngine.process(
-                        "email-envio-moeda",
-                        ctx
-                );
-
-        enviarHtml(
-                event.professorEmail(),
-                "Confirmação de envio de moedas",
-                html
-        );
+        String html = templateEngine.process("email-envio-moeda", ctx);
+        enviarHtml(event.professorEmail(), "Confirmação de envio de moedas", html);
     }
 
-    // =========================================================
-    // RESGATE ALUNO
-    // =========================================================
-
-    public void enviarResgateAluno(
-            EmailResgateAlunoEvent event
-    ) {
-
+    public void enviarResgateAluno(EmailResgateAlunoEvent event) {
         Context ctx = new Context();
+        ctx.setVariable("alunoNome", event.alunoNome());
+        ctx.setVariable("vantagemNome", event.vantagemNome());
+        ctx.setVariable("codigoCupom", event.codigoCupom());
+        ctx.setVariable("custoMoedas", event.custoMoedas());
+        ctx.setVariable("saldoRestante", event.saldoRestante());
+        ctx.setVariable("empresaNome", event.empresaNome());
 
-        ctx.setVariable(
-                "alunoNome",
-                event.alunoNome()
-        );
-
-        ctx.setVariable(
-                "vantagemNome",
-                event.vantagemNome()
-        );
-
-        ctx.setVariable(
-                "codigoCupom",
-                event.codigoCupom()
-        );
-
-        ctx.setVariable(
-                "custoMoedas",
-                event.custoMoedas()
-        );
-
-        ctx.setVariable(
-                "saldoRestante",
-                event.saldoRestante()
-        );
-
-        ctx.setVariable(
-                "empresaNome",
-                event.empresaNome()
-        );
-
-        String html =
-                templateEngine.process(
-                        "email-resgate-aluno",
-                        ctx
-                );
-
-        enviarHtml(
-                event.alunoEmail(),
-                "Seu cupom de resgate",
-                html
-        );
+        String html = templateEngine.process("email-resgate-aluno", ctx);
+        enviarHtml(event.alunoEmail(), "Seu cupom de resgate", html);
     }
 
-    // =========================================================
-    // RESGATE EMPRESA
-    // =========================================================
-
-    public void enviarResgateEmpresa(
-            EmailResgateEmpresaEvent event
-    ) {
-
+    public void enviarResgateEmpresa(EmailResgateEmpresaEvent event) {
         Context ctx = new Context();
+        ctx.setVariable("empresaNome", event.empresaNome());
+        ctx.setVariable("alunoNome", event.alunoNome());
+        ctx.setVariable("alunoEmail", event.alunoEmail());
+        ctx.setVariable("vantagemNome", event.vantagemNome());
+        ctx.setVariable("codigoCupom", event.codigoCupom());
+        ctx.setVariable("custoMoedas", event.custoMoedas());
 
-        ctx.setVariable(
-                "empresaNome",
-                event.empresaNome()
-        );
-
-        ctx.setVariable(
-                "alunoNome",
-                event.alunoNome()
-        );
-
-        ctx.setVariable(
-                "alunoEmail",
-                event.alunoEmail()
-        );
-
-        ctx.setVariable(
-                "vantagemNome",
-                event.vantagemNome()
-        );
-
-        ctx.setVariable(
-                "codigoCupom",
-                event.codigoCupom()
-        );
-
-        ctx.setVariable(
-                "custoMoedas",
-                event.custoMoedas()
-        );
-
-        String html =
-                templateEngine.process(
-                        "email-resgate-empresa",
-                        ctx
-                );
-
-        enviarHtml(
-                event.empresaEmail(),
-                "Novo resgate de cupom",
-                html
-        );
+        String html = templateEngine.process("email-resgate-empresa", ctx);
+        enviarHtml(event.empresaEmail(), "Novo resgate de cupom", html);
     }
 
-    // =========================================================
-    // MÉTODO BASE SMTP
-    // =========================================================
-
-    private void enviarHtml(
-            String para,
-            String assunto,
-            String html
-    ) {
-
+    private void enviarHtml(String para, String assunto, String html) {
         try {
-
-            MimeMessage mime =
-                    mailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            mime,
-                            true,
-                            StandardCharsets.UTF_8.name()
-                    );
-
+            MimeMessage mime = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(
+                mime, 
+                true, 
+                StandardCharsets.UTF_8.name()
+            );
+            
             helper.setFrom(from);
-
             helper.setTo(para);
-
             helper.setSubject(assunto);
-
             helper.setText(html, true);
-
+            
             mailSender.send(mime);
-
-            log.info(
-                    "Email enviado para {}",
-                    para
-            );
-
+            log.info("Email enviado com sucesso para: {}", para);
+            
         } catch (Exception e) {
-
-            log.error(
-                    "Erro ao enviar email: {}",
-                    e.getMessage()
-            );
-
-            throw new RuntimeException(e);
+            log.error("Erro ao enviar email para {}: {}", para, e.getMessage());
+            throw new RuntimeException("Falha ao enviar email", e);
         }
     }
 }

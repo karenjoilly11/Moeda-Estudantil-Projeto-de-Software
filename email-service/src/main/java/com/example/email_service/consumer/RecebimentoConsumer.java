@@ -17,7 +17,7 @@ public class RecebimentoConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.RECEBIMENTO_QUEUE)
     public void consumir(EmailRecebimentoMoedaEvent event) {
-        log.info("Consumindo email de recebimento para {}", event.alunoEmail());
+        log.info("Consumindo email de recebimento para: {}", event.alunoEmail());
         emailService.enviarRecebimentoMoeda(event);
     }
 }

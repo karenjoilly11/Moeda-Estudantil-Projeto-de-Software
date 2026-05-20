@@ -15,19 +15,9 @@ public class EnvioConsumer {
 
     private final EmailService emailService;
 
-    @RabbitListener(
-            queues = RabbitMQConfig.ENVIO_QUEUE
-    )
-    public void consumir(
-            EmailEnvioMoedaEvent event
-    ) {
-
-        log.info(
-                "Consumindo confirmação para {}",
-                event.professorEmail()
-        );
-
-        emailService
-                .enviarConfirmacaoEnvio(event);
+    @RabbitListener(queues = RabbitMQConfig.ENVIO_QUEUE)
+    public void consumir(EmailEnvioMoedaEvent event) {
+        log.info("Consumindo confirmação de envio para: {}", event.professorEmail());
+        emailService.enviarConfirmacaoEnvio(event);
     }
 }

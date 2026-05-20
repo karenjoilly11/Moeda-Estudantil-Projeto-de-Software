@@ -15,19 +15,9 @@ public class ResgateEmpresaConsumer {
 
     private final EmailService emailService;
 
-    @RabbitListener(
-            queues = RabbitMQConfig.RESGATE_EMPRESA_QUEUE
-    )
-    public void consumir(
-            EmailResgateEmpresaEvent event
-    ) {
-
-        log.info(
-                "Consumindo resgate empresa para {}",
-                event.empresaEmail()
-        );
-
-        emailService
-                .enviarResgateEmpresa(event);
+    @RabbitListener(queues = RabbitMQConfig.RESGATE_EMPRESA_QUEUE)
+    public void consumir(EmailResgateEmpresaEvent event) {
+        log.info("Consumindo resgate empresa para: {}", event.empresaEmail());
+        emailService.enviarResgateEmpresa(event);
     }
 }

@@ -15,19 +15,9 @@ public class ResgateAlunoConsumer {
 
     private final EmailService emailService;
 
-    @RabbitListener(
-            queues = RabbitMQConfig.RESGATE_ALUNO_QUEUE
-    )
-    public void consumir(
-            EmailResgateAlunoEvent event
-    ) {
-
-        log.info(
-                "Consumindo resgate aluno para {}",
-                event.alunoEmail()
-        );
-
-        emailService
-                .enviarResgateAluno(event);
+    @RabbitListener(queues = RabbitMQConfig.RESGATE_ALUNO_QUEUE)
+    public void consumir(EmailResgateAlunoEvent event) {
+        log.info("Consumindo resgate aluno para: {}", event.alunoEmail());
+        emailService.enviarResgateAluno(event);
     }
 }
