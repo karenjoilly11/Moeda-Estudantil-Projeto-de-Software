@@ -1,8 +1,8 @@
-package com.emailservice.consumer;
+package com.example.email_service.consumer;
 
-import com.emailservice.config.RabbitMQConfig;
-import com.emailservice.dto.EmailResgateAlunoEvent;
-import com.emailservice.service.EmailService;
+import com.example.email_service.config.RabbitMQConfig;
+import com.example.email_service.dto.EmailResgateAlunoEvent;
+import com.example.email_service.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

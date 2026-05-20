@@ -1,9 +1,9 @@
-package com.emailservice.service;
+package com.example.email_service.service;
 
-import com.emailservice.dto.EmailEnvioMoedaEvent;
-import com.emailservice.dto.EmailRecebimentoMoedaEvent;
-import com.emailservice.dto.EmailResgateAlunoEvent;
-import com.emailservice.dto.EmailResgateEmpresaEvent;
+import com.example.email_service.dto.EmailEnvioMoedaEvent;
+import com.example.email_service.dto.EmailRecebimentoMoedaEvent;
+import com.example.email_service.dto.EmailResgateAlunoEvent;
+import com.example.email_service.dto.EmailResgateEmpresaEvent;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

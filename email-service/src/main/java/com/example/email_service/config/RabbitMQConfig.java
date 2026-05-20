@@ -1,4 +1,4 @@
-package com.emailservice.config;
+package com.example.email_service.config;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;

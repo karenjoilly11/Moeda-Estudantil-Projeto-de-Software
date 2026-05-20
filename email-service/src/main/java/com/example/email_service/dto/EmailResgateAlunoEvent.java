@@ -1,4 +1,4 @@
-package com.emailservice.dto;
+package com.example.email_service.dto;
 
 public record EmailResgateAlunoEvent(
 

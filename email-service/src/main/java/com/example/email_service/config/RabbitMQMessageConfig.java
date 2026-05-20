@@ -1,4 +1,4 @@
-package com.moedaestudantil.api.config;
+package com.example.email_service.config;
 
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;

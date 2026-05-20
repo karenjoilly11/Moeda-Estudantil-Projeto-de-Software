@@ -1,7 +1,7 @@
-package com.emailservice.consumer;
+package com.example.email_service.consumer;
 
-import com.emailservice.dto.EmailRecebimentoMoedaEvent;
-import com.emailservice.service.EmailService;
+import com.example.email_service.dto.EmailRecebimentoMoedaEvent;
+import com.example.email_service.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
