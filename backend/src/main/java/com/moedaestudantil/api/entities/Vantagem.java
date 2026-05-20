@@ -37,4 +37,8 @@ public class Vantagem {
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = true)
     private Empresa empresa;
+
+    @Version
+    @Column(name = "versao")
+    private Long versao;
 }

@@ -7,6 +7,8 @@ const TOKEN_KEY = "auth_token";
 const ROLE_KEY = "auth_role";
 const USER_KEY = "auth_user";
 
+const REQUEST_TIMEOUT_MS = 20000;
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -48,7 +50,6 @@ export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(ROLE_KEY);
   localStorage.removeItem(USER_KEY);
-  // Limpar também chaves antigas para compatibilidade
   localStorage.removeItem("aluno_token");
   localStorage.removeItem("aluno_data");
 }
@@ -69,6 +70,16 @@ export interface ApiResponse<T> {
   ok: boolean;
 }
 
+function extractErrorMessage(body: unknown, status: number): string {
+  if (typeof body === "string" && body.length > 0) return body;
+  if (body && typeof body === "object") {
+    const obj = body as Record<string, unknown>;
+    if (typeof obj.error === "string") return obj.error;
+    if (typeof obj.message === "string") return obj.message;
+  }
+  return `HTTP ${status}`;
+}
+
 async function request<T>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   endpoint: string,
@@ -78,19 +89,32 @@ async function request<T>(
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    method,
-    headers,
-    body: data !== undefined ? JSON.stringify(data) : undefined,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      method,
+      headers,
+      body: data !== undefined ? JSON.stringify(data) : undefined,
+      signal: controller.signal,
+    });
+  } catch (e: any) {
+    clearTimeout(timeoutId);
+    if (e?.name === "AbortError") {
+      throw new ApiError(0, null, "Tempo limite excedido. Verifique sua conexão.");
+    }
+    throw new ApiError(0, null, "Falha de conexão com o servidor.");
+  }
+  clearTimeout(timeoutId);
 
   const text = await response.text();
   let body: unknown = text;
   try { body = text ? JSON.parse(text) : null; } catch { /* keep as text */ }
 
   if (!response.ok) {
-    const msg = typeof body === "string" ? body : `HTTP ${response.status}`;
-    throw new ApiError(response.status, body, msg);
+    throw new ApiError(response.status, body, extractErrorMessage(body, response.status));
   }
   return { data: body as T, status: response.status, ok: response.ok };
 }

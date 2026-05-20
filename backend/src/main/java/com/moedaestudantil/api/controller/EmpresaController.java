@@ -8,7 +8,6 @@ import com.moedaestudantil.api.services.TransacaoService;
 import com.moedaestudantil.api.services.VantagemService;
 import com.moedaestudantil.api.util.TokenUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,20 +22,12 @@ public class EmpresaController {
 
     @PostMapping("/cadastro")
     public ResponseEntity<?> cadastrar(@RequestBody EmpresaCadastroDTO dto) {
-        try {
-            return ResponseEntity.ok(empresaService.cadastrar(dto));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(empresaService.cadastrar(dto));
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
-        try {
-            return ResponseEntity.ok(empresaService.login(dto));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(empresaService.login(dto));
     }
 
     @GetMapping
@@ -46,88 +37,43 @@ public class EmpresaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> buscar(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(empresaService.buscarPorId(id));
-        } catch (Exception e) {
-            return ResponseEntity.status(404).body(e.getMessage());
-        }
+        return ResponseEntity.ok(empresaService.buscarPorId(id));
     }
 
     @GetMapping("/{id}/vantagens")
     public ResponseEntity<?> vantagens(@PathVariable Long id,
                                        @RequestHeader(value = "Authorization", required = false) String authorization) {
-        try {
-            // P0-5: só a própria empresa lista suas vantagens
-            ResponseEntity<?> forbidden = checkOwnership(id, authorization);
-            if (forbidden != null) return forbidden;
-            return ResponseEntity.ok(vantagemService.listarPorEmpresa(id));
-        } catch (RuntimeException e) {
-            String msg = e.getMessage();
-            if (msg != null && (msg.contains("Token") || msg.contains("token"))) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(msg);
-            }
-            return ResponseEntity.badRequest().body(msg);
-        }
+        checkOwnership(id, authorization);
+        return ResponseEntity.ok(vantagemService.listarPorEmpresa(id));
     }
 
     @GetMapping("/{id}/cupons")
     public ResponseEntity<?> cupons(@PathVariable Long id,
                                     @RequestHeader(value = "Authorization", required = false) String authorization) {
-        try {
-            // P0-5: só a própria empresa lista seus cupons
-            ResponseEntity<?> forbidden = checkOwnership(id, authorization);
-            if (forbidden != null) return forbidden;
-            return ResponseEntity.ok(transacaoService.cuponsDaEmpresa(id));
-        } catch (RuntimeException e) {
-            String msg = e.getMessage();
-            if (msg != null && (msg.contains("Token") || msg.contains("token"))) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(msg);
-            }
-            return ResponseEntity.badRequest().body(msg);
-        }
+        checkOwnership(id, authorization);
+        return ResponseEntity.ok(transacaoService.cuponsDaEmpresa(id));
     }
 
     @PutMapping("/perfil/{id}")
     public ResponseEntity<?> atualizarPerfil(@PathVariable Long id, @RequestBody EmpresaPerfilDTO dto,
                                              @RequestHeader(value = "Authorization", required = false) String authorization) {
-        try {
-            ResponseEntity<?> forbidden = checkOwnership(id, authorization);
-            if (forbidden != null) return forbidden;
-            return ResponseEntity.ok(empresaService.atualizarPerfil(id, dto));
-        } catch (RuntimeException e) {
-            String msg = e.getMessage();
-            if (msg != null && (msg.contains("Token") || msg.contains("token"))) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(msg);
-            }
-            return ResponseEntity.badRequest().body(msg);
-        }
+        checkOwnership(id, authorization);
+        return ResponseEntity.ok(empresaService.atualizarPerfil(id, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> excluirConta(@PathVariable Long id,
                                           @RequestHeader(value = "Authorization", required = false) String authorization) {
-        try {
-            ResponseEntity<?> forbidden = checkOwnership(id, authorization);
-            if (forbidden != null) return forbidden;
-            empresaService.excluirConta(id);
-            return ResponseEntity.ok().body("Conta excluída com sucesso");
-        } catch (RuntimeException e) {
-            String msg = e.getMessage();
-            if (msg != null && (msg.contains("Token") || msg.contains("token"))) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(msg);
-            }
-            return ResponseEntity.badRequest().body(msg);
-        }
+        checkOwnership(id, authorization);
+        empresaService.excluirConta(id);
+        return ResponseEntity.ok().body("Conta excluída com sucesso");
     }
 
-    /** Retorna ResponseEntity 403 se id ≠ empresa autenticada, ou null se OK. */
-    private ResponseEntity<?> checkOwnership(Long pathId, String authorization) {
+    private void checkOwnership(Long pathId, String authorization) {
         String email = TokenUtil.extractEmail(authorization);
         Long empresaIdAutenticada = empresaService.findByEmail(email).getId();
         if (!pathId.equals(empresaIdAutenticada)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Você não tem permissão para acessar dados de outra empresa");
+            throw new SecurityException("Você não tem permissão para acessar dados de outra empresa");
         }
-        return null;
     }
 }

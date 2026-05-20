@@ -13,11 +13,12 @@ import com.moedaestudantil.api.repositories.ProfessorRepository;
 import com.moedaestudantil.api.repositories.VantagemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Base64;
-
 @Component
+@Profile({"default", "docker", "dev"})
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -26,10 +27,10 @@ public class DataInitializer implements CommandLineRunner {
     private final AlunoRepository alunoRepository;
     private final VantagemRepository vantagemRepository;
     private final EmpresaRepository empresaRepository;
-    
-    // Método auxiliar para codificar senha
+    private final PasswordEncoder passwordEncoder;
+
     private String codificarSenha(String senha) {
-        return Base64.getEncoder().encodeToString(senha.getBytes());
+        return passwordEncoder.encode(senha);
     }
     
     @Override

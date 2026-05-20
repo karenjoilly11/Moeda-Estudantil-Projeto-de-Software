@@ -124,6 +124,13 @@ services:
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-admin}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
 
+      # =====================================
+      # JWT
+      # =====================================
+
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-trocar-em-prod-com-pelo-menos-32-caracteres-aqui-xxxx}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-8}
+
     ports:
       - "8081:8081"
 

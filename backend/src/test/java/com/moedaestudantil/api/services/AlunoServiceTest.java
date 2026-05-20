@@ -12,8 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Base64;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +26,7 @@ class AlunoServiceTest {
 
     @Mock private AlunoRepository alunoRepository;
     @Mock private InstituicaoRepository instituicaoRepository;
+    @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private AlunoService service;
@@ -44,10 +45,11 @@ class AlunoServiceTest {
     }
 
     @Test
-    void cadastrar_dadosValidos_criaAlunoComSaldoZeroESenhaBase64() {
+    void cadastrar_dadosValidos_criaAlunoComSaldoZeroESenhaCodificada() {
         Instituicao inst = new Instituicao(1L, "PUC", "endereco", "tel");
         when(alunoRepository.existsByEmail("joao@aluno.com")).thenReturn(false);
         when(instituicaoRepository.findById(1L)).thenReturn(Optional.of(inst));
+        when(passwordEncoder.encode("123456")).thenReturn("$2a$10$hash-fake");
         when(alunoRepository.save(any(Aluno.class))).thenAnswer(inv -> {
             Aluno a = inv.getArgument(0);
             a.setId(7L);
@@ -61,10 +63,9 @@ class AlunoServiceTest {
         assertThat(resp.getSaldoMoedas()).isEqualTo(0.0);
         assertThat(resp.getInstituicaoNome()).isEqualTo("PUC");
 
-        verify(alunoRepository).save(argThat(a -> {
-            String esperada = Base64.getEncoder().encodeToString("123456".getBytes());
-            return a.getSenha().equals(esperada) && a.getSaldoMoedas().equals(0.0);
-        }));
+        verify(alunoRepository).save(argThat(a ->
+                "$2a$10$hash-fake".equals(a.getSenha()) && a.getSaldoMoedas().equals(0.0)
+        ));
     }
 
     @Test
@@ -82,9 +83,10 @@ class AlunoServiceTest {
     void login_credenciaisIncorretas_lancaErro() {
         Aluno a = new Aluno();
         a.setEmail("joao@aluno.com");
-        a.setSenha(Base64.getEncoder().encodeToString("senha-certa".getBytes()));
+        a.setSenha("$2a$10$hash-correto");
 
         when(alunoRepository.findByEmail("joao@aluno.com")).thenReturn(Optional.of(a));
+        when(passwordEncoder.matches("senha-errada", "$2a$10$hash-correto")).thenReturn(false);
 
         LoginRequestDTO dto = new LoginRequestDTO();
         dto.setEmail("joao@aluno.com");

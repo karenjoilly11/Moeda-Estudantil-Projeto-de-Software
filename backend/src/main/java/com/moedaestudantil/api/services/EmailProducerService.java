@@ -4,6 +4,7 @@ import com.moedaestudantil.api.config.RabbitMQConfig;
 import com.moedaestudantil.api.dto.event.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,15 +23,23 @@ public class EmailProducerService {
             EmailRecebimentoMoedaEvent event
     ) {
 
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.RECEBIMENTO_QUEUE,
-                event
-        );
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.RECEBIMENTO_QUEUE,
+                    event
+            );
 
-        log.info(
-                "Evento recebimento enviado para {}",
-                event.alunoEmail()
-        );
+            log.info(
+                    "Evento recebimento enviado para {}",
+                    event.alunoEmail()
+            );
+        } catch (AmqpException e) {
+            log.warn(
+                    "Falha ao publicar evento recebimento para {}: {}",
+                    event.alunoEmail(),
+                    e.getMessage()
+            );
+        }
     }
 
     // =====================================================
@@ -41,15 +50,23 @@ public class EmailProducerService {
             EmailEnvioMoedaEvent event
     ) {
 
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.ENVIO_QUEUE,
-                event
-        );
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.ENVIO_QUEUE,
+                    event
+            );
 
-        log.info(
-                "Evento envio enviado para {}",
-                event.professorEmail()
-        );
+            log.info(
+                    "Evento envio enviado para {}",
+                    event.professorEmail()
+            );
+        } catch (AmqpException e) {
+            log.warn(
+                    "Falha ao publicar evento envio para {}: {}",
+                    event.professorEmail(),
+                    e.getMessage()
+            );
+        }
     }
 
     // =====================================================
@@ -60,15 +77,23 @@ public class EmailProducerService {
             EmailResgateAlunoEvent event
     ) {
 
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.RESGATE_ALUNO_QUEUE,
-                event
-        );
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.RESGATE_ALUNO_QUEUE,
+                    event
+            );
 
-        log.info(
-                "Evento resgate aluno enviado para {}",
-                event.alunoEmail()
-        );
+            log.info(
+                    "Evento resgate aluno enviado para {}",
+                    event.alunoEmail()
+            );
+        } catch (AmqpException e) {
+            log.warn(
+                    "Falha ao publicar evento resgate aluno para {}: {}",
+                    event.alunoEmail(),
+                    e.getMessage()
+            );
+        }
     }
 
     // =====================================================
@@ -79,14 +104,22 @@ public class EmailProducerService {
             EmailResgateEmpresaEvent event
     ) {
 
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.RESGATE_EMPRESA_QUEUE,
-                event
-        );
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.RESGATE_EMPRESA_QUEUE,
+                    event
+            );
 
-        log.info(
-                "Evento resgate empresa enviado para {}",
-                event.empresaEmail()
-        );
+            log.info(
+                    "Evento resgate empresa enviado para {}",
+                    event.empresaEmail()
+            );
+        } catch (AmqpException e) {
+            log.warn(
+                    "Falha ao publicar evento resgate empresa para {}: {}",
+                    event.empresaEmail(),
+                    e.getMessage()
+            );
+        }
     }
 }

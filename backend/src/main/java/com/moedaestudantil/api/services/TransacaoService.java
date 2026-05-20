@@ -22,10 +22,12 @@ import jakarta.persistence.EntityNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -45,15 +47,7 @@ public class TransacaoService {
 
     private final VantagemRepository vantagemRepository;
 
-    private final EmailProducerService emailProducerService;
-
-    @Transactional
-    public ResgateResponseDTO resgatar(
-            ResgateRequestDTO dto
-    ) {
-
-        return resgatar(dto, null);
-    }
+    private final ApplicationEventPublisher eventPublisher;
 
     // =====================================================
     // RESGATE
@@ -65,13 +59,12 @@ public class TransacaoService {
             Long alunoIdAutenticado
     ) {
 
-        if (
-                alunoIdAutenticado != null
-                        &&
-                        !alunoIdAutenticado.equals(
-                                dto.getAlunoId()
-                        )
-        ) {
+        Objects.requireNonNull(
+                alunoIdAutenticado,
+                "alunoIdAutenticado obrigatório"
+        );
+
+        if (!alunoIdAutenticado.equals(dto.getAlunoId())) {
 
             throw new SecurityException(
                     "Não é permitido resgatar em nome de outro aluno"
@@ -188,58 +181,28 @@ public class TransacaoService {
                 );
 
         // =====================================================
-        // PUBLICAR EVENTOS
+        // PUBLICAR EVENTOS (entregues ao Rabbit AFTER_COMMIT)
         // =====================================================
 
-        EmailResgateAlunoEvent alunoEvent =
-                new EmailResgateAlunoEvent(
+        eventPublisher.publishEvent(new EmailResgateAlunoEvent(
+                aluno.getNome(),
+                aluno.getEmail(),
+                vantagem.getNome(),
+                codigoCupom,
+                vantagem.getCustoMoedas(),
+                aluno.getSaldoMoedas(),
+                nomeEmpresaOuInstituicao(vantagem)
+        ));
 
-                        aluno.getNome(),
-
-                        aluno.getEmail(),
-
-                        vantagem.getNome(),
-
-                        codigoCupom,
-
-                        vantagem.getCustoMoedas(),
-
-                        aluno.getSaldoMoedas(),
-
-                        nomeEmpresaOuInstituicao(
-                                vantagem
-                        )
-                );
-
-        emailProducerService.publicarResgateAluno(
-                alunoEvent
-        );
-
-        EmailResgateEmpresaEvent empresaEvent =
-                new EmailResgateEmpresaEvent(
-
-                        nomeEmpresaOuInstituicao(
-                                vantagem
-                        ),
-
-                        emailEmpresaOuFallback(
-                                vantagem
-                        ),
-
-                        aluno.getNome(),
-
-                        aluno.getEmail(),
-
-                        vantagem.getNome(),
-
-                        codigoCupom,
-
-                        vantagem.getCustoMoedas()
-                );
-
-        emailProducerService.publicarResgateEmpresa(
-                empresaEvent
-        );
+        eventPublisher.publishEvent(new EmailResgateEmpresaEvent(
+                nomeEmpresaOuInstituicao(vantagem),
+                emailEmpresaOuFallback(vantagem),
+                aluno.getNome(),
+                aluno.getEmail(),
+                vantagem.getNome(),
+                codigoCupom,
+                vantagem.getCustoMoedas()
+        ));
 
         // response
 
@@ -303,25 +266,14 @@ public class TransacaoService {
     // =====================================================
 
     public CupomValidacaoDTO validarCupom(
-            String codigo
-    ) {
-
-        Transacao t =
-                transacaoRepository
-                        .findByCodigoCupom(codigo)
-                        .orElseThrow(() ->
-                                new EntityNotFoundException(
-                                        "Cupom não encontrado!"
-                                )
-                        );
-
-        return toCupomDTO(t);
-    }
-
-    public CupomValidacaoDTO validarCupom(
             String codigo,
             Long empresaIdAutenticada
     ) {
+
+        Objects.requireNonNull(
+                empresaIdAutenticada,
+                "empresaIdAutenticada obrigatória"
+        );
 
         Transacao t =
                 transacaoRepository
@@ -346,17 +298,14 @@ public class TransacaoService {
 
     @Transactional
     public CupomValidacaoDTO utilizarCupom(
-            String codigo
-    ) {
-
-        return utilizarCupom(codigo, null);
-    }
-
-    @Transactional
-    public CupomValidacaoDTO utilizarCupom(
             String codigo,
             Long empresaIdAutenticada
     ) {
+
+        Objects.requireNonNull(
+                empresaIdAutenticada,
+                "empresaIdAutenticada obrigatória"
+        );
 
         Transacao t =
                 transacaoRepository
@@ -367,13 +316,10 @@ public class TransacaoService {
                                 )
                         );
 
-        if (empresaIdAutenticada != null) {
-
-            assertCupomDaEmpresa(
-                    t,
-                    empresaIdAutenticada
-            );
-        }
+        assertCupomDaEmpresa(
+                t,
+                empresaIdAutenticada
+        );
 
         if (
                 !STATUS_PENDENTE.equals(

@@ -40,4 +40,8 @@ public class Usuario {
     
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Version
+    @Column(name = "versao")
+    private Long versao;
 }
