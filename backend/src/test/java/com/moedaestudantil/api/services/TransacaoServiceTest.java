@@ -3,22 +3,24 @@ package com.moedaestudantil.api.services;
 import com.moedaestudantil.api.dto.CupomValidacaoDTO;
 import com.moedaestudantil.api.dto.ResgateRequestDTO;
 import com.moedaestudantil.api.dto.ResgateResponseDTO;
-import com.moedaestudantil.api.dto.event.EmailResgateAlunoEvent;
-import com.moedaestudantil.api.dto.event.EmailResgateEmpresaEvent;
 import com.moedaestudantil.api.entities.Aluno;
 import com.moedaestudantil.api.entities.Transacao;
 import com.moedaestudantil.api.entities.Vantagem;
 import com.moedaestudantil.api.repositories.AlunoRepository;
 import com.moedaestudantil.api.repositories.TransacaoRepository;
 import com.moedaestudantil.api.repositories.VantagemRepository;
+
 import jakarta.persistence.EntityNotFoundException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,21 +48,27 @@ class TransacaoServiceTest {
     private TransacaoService service;
 
     private Aluno aluno;
+
     private Vantagem vantagem;
 
     @BeforeEach
     void setup() {
 
         aluno = new Aluno();
+
         aluno.setId(1L);
         aluno.setNome("Aluno Teste");
         aluno.setEmail("aluno@teste.com");
         aluno.setSaldoMoedas(100.0);
 
         vantagem = new Vantagem();
+
         vantagem.setId(10L);
         vantagem.setNome("Caderno");
         vantagem.setCustoMoedas(50.0);
+
+        // evita erro de estoque
+        vantagem.setEstoque(10);
     }
 
     @Test
@@ -76,38 +84,50 @@ class TransacaoServiceTest {
                 .thenReturn(Optional.empty());
 
         when(transacaoRepository.save(any(Transacao.class)))
-                .thenAnswer(inv -> {
-                    Transacao t = inv.getArgument(0);
+                .thenAnswer(invocation -> {
+
+                    Transacao t = invocation.getArgument(0);
+
                     t.setId(99L);
+
+                    t.setData(LocalDateTime.now());
+
                     return t;
                 });
 
         ResgateRequestDTO dto = new ResgateRequestDTO();
+
         dto.setAlunoId(1L);
         dto.setVantagemId(10L);
 
-        ResgateResponseDTO resp = service.resgatar(dto);
+        ResgateResponseDTO resp =
+                service.resgatar(dto);
 
-        assertThat(resp.getCodigoCupom()).hasSize(8);
-        assertThat(resp.getSaldoRestante()).isEqualTo(50.0);
-        assertThat(resp.getVantagemNome()).isEqualTo("Caderno");
-        assertThat(resp.getCustoMoedas()).isEqualTo(50.0);
+        assertThat(resp.getCodigoCupom())
+                .hasSize(8);
+
+        assertThat(resp.getSaldoRestante())
+                .isEqualTo(50.0);
+
+        assertThat(resp.getVantagemNome())
+                .isEqualTo("Caderno");
+
+        assertThat(resp.getCustoMoedas())
+                .isEqualTo(50.0);
 
         verify(alunoRepository)
-                .save(argThat(a -> a.getSaldoMoedas().equals(50.0)));
+                .save(argThat(
+                        a -> a.getSaldoMoedas() == 50.0
+                ));
 
         verify(transacaoRepository)
                 .save(any(Transacao.class));
 
         verify(emailProducerService)
-                .publicarResgateAluno(
-                        any(EmailResgateAlunoEvent.class)
-                );
+                .publicarResgateAluno(any());
 
         verify(emailProducerService)
-                .publicarResgateEmpresa(
-                        any(EmailResgateEmpresaEvent.class)
-                );
+                .publicarResgateEmpresa(any());
     }
 
     @Test
@@ -122,10 +142,13 @@ class TransacaoServiceTest {
                 .thenReturn(Optional.of(vantagem));
 
         ResgateRequestDTO dto = new ResgateRequestDTO();
+
         dto.setAlunoId(1L);
         dto.setVantagemId(10L);
 
-        assertThatThrownBy(() -> service.resgatar(dto))
+        assertThatThrownBy(() ->
+                service.resgatar(dto)
+        )
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Saldo insuficiente");
 
@@ -146,10 +169,13 @@ class TransacaoServiceTest {
                 .thenReturn(Optional.empty());
 
         ResgateRequestDTO dto = new ResgateRequestDTO();
+
         dto.setAlunoId(999L);
         dto.setVantagemId(10L);
 
-        assertThatThrownBy(() -> service.resgatar(dto))
+        assertThatThrownBy(() ->
+                service.resgatar(dto)
+        )
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Aluno");
     }
@@ -164,10 +190,13 @@ class TransacaoServiceTest {
                 .thenReturn(Optional.empty());
 
         ResgateRequestDTO dto = new ResgateRequestDTO();
+
         dto.setAlunoId(1L);
         dto.setVantagemId(999L);
 
-        assertThatThrownBy(() -> service.resgatar(dto))
+        assertThatThrownBy(() ->
+                service.resgatar(dto)
+        )
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Vantagem");
     }
@@ -176,21 +205,31 @@ class TransacaoServiceTest {
     void validarCupom_pendente_retornaDTO() {
 
         Transacao t = new Transacao();
+
         t.setCodigoCupom("ABC12345");
         t.setStatus("PENDENTE");
         t.setAluno(aluno);
         t.setVantagem(vantagem);
         t.setValor(50.0);
+        t.setData(LocalDateTime.now());
 
         when(transacaoRepository.findByCodigoCupom("ABC12345"))
                 .thenReturn(Optional.of(t));
 
-        CupomValidacaoDTO dto = service.validarCupom("ABC12345");
+        CupomValidacaoDTO dto =
+                service.validarCupom("ABC12345");
 
-        assertThat(dto.getCodigoCupom()).isEqualTo("ABC12345");
-        assertThat(dto.getStatus()).isEqualTo("PENDENTE");
-        assertThat(dto.getAlunoNome()).isEqualTo("Aluno Teste");
-        assertThat(dto.getVantagemNome()).isEqualTo("Caderno");
+        assertThat(dto.getCodigoCupom())
+                .isEqualTo("ABC12345");
+
+        assertThat(dto.getStatus())
+                .isEqualTo("PENDENTE");
+
+        assertThat(dto.getAlunoNome())
+                .isEqualTo("Aluno Teste");
+
+        assertThat(dto.getVantagemNome())
+                .isEqualTo("Caderno");
     }
 
     @Test
@@ -199,7 +238,9 @@ class TransacaoServiceTest {
         when(transacaoRepository.findByCodigoCupom("XXXXXXXX"))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.validarCupom("XXXXXXXX"))
+        assertThatThrownBy(() ->
+                service.validarCupom("XXXXXXXX")
+        )
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Cupom");
     }
@@ -208,25 +249,33 @@ class TransacaoServiceTest {
     void utilizarCupom_pendente_mudaParaUtilizado() {
 
         Transacao t = new Transacao();
+
         t.setCodigoCupom("ABC12345");
         t.setStatus("PENDENTE");
         t.setAluno(aluno);
         t.setVantagem(vantagem);
         t.setValor(50.0);
+        t.setData(LocalDateTime.now());
 
         when(transacaoRepository.findByCodigoCupom("ABC12345"))
                 .thenReturn(Optional.of(t));
 
         when(transacaoRepository.save(any(Transacao.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0)
+                );
 
-        CupomValidacaoDTO dto = service.utilizarCupom("ABC12345");
+        CupomValidacaoDTO dto =
+                service.utilizarCupom("ABC12345");
 
-        assertThat(dto.getStatus()).isEqualTo("UTILIZADO");
+        assertThat(dto.getStatus())
+                .isEqualTo("UTILIZADO");
 
         verify(transacaoRepository)
                 .save(argThat(
-                        tr -> "UTILIZADO".equals(tr.getStatus())
+                        tr -> "UTILIZADO".equals(
+                                tr.getStatus()
+                        )
                 ));
     }
 
@@ -234,6 +283,7 @@ class TransacaoServiceTest {
     void utilizarCupom_jaUtilizado_lancaIllegalState() {
 
         Transacao t = new Transacao();
+
         t.setCodigoCupom("ABC12345");
         t.setStatus("UTILIZADO");
         t.setAluno(aluno);
@@ -242,7 +292,9 @@ class TransacaoServiceTest {
         when(transacaoRepository.findByCodigoCupom("ABC12345"))
                 .thenReturn(Optional.of(t));
 
-        assertThatThrownBy(() -> service.utilizarCupom("ABC12345"))
+        assertThatThrownBy(() ->
+                service.utilizarCupom("ABC12345")
+        )
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Cupom")
                 .hasMessageContaining("pendente");
