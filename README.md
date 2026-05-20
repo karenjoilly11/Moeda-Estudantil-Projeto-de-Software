@@ -1,6 +1,16 @@
-# Sistema de Moeda Estudantil
+<div align="center">
 
-> Plataforma para reconhecimento de mérito estudantil através de moeda virtual, com integração entre alunos, professores e empresas parceiras.
+<img src="https://capsule-render.vercel.app/api?type=waving&height=240&color=0:D4AF37,50:F4EBD0,100:AA7C11&text=Sistema%20de%20Aluguel%20de%20Carros&fontColor=ffffff&fontSize=42&fontAlignY=40&desc=Projeto%20acad%C3%AAmico%20de%20Laborat%C3%B3rio%20de%20Desenvolvimento%20de%20Software&descAlignY=60" alt="Banner do Sistema de Aluguel de Carros" width="100%" />
+
+<p>
+  <strong>Projeto acadêmico</strong> da disciplina de <strong>Laboratório de Desenvolvimento de Software</strong>
+  para modelagem e implementação de uma plataforma web de <strong>moeda estudantil</strong>.
+</p>
+<p>
+  Plataforma • Mérito Estudantil • Moeda Virtual • Alunos • Professores • Empresas 
+</p>
+</div>
+
 
 ---
 
