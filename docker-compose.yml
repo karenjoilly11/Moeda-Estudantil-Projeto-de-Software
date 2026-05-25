@@ -174,7 +174,7 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
 
-      EMAIL_FROM: ${EMAIL_FROM}
+      MAIL_FROM: ${EMAIL_FROM}
 
     ports:
       - "8082:8082"

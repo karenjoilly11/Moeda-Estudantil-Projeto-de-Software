@@ -4,6 +4,6 @@ public record EmailRecebimentoMoedaEvent(
     String alunoEmail,
     String alunoNome,
     String professorNome,
-    Integer valor,
+    Double valor,
     String mensagem
 ) {}

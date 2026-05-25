@@ -7,5 +7,5 @@ public record EmailResgateEmpresaEvent(
     String alunoEmail,
     String vantagemNome,
     String codigoCupom,
-    Integer custoMoedas
+    Double custoMoedas
 ) {}

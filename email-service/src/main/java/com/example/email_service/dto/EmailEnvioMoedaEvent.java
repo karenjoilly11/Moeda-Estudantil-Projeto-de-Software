@@ -4,7 +4,7 @@ public record EmailEnvioMoedaEvent(
     String professorEmail,
     String professorNome,
     String alunoNome,
-    Integer valor,
+    Double valor,
     String mensagem,
-    Integer saldoRestante
+    Double saldoRestante
 ) {}
