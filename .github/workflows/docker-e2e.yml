@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build e subir stack (postgres + backend + frontend)
+      - name: Build e subir stack (postgres + rabbitmq + backend + email-service + frontend)
         run: |
           docker compose -f docker-compose.yml up -d --build --wait
         env:
@@ -61,35 +61,37 @@ jobs:
 
       - name: Cypress run (baseUrl = Nginx :80)
         id: cypress
-        continue-on-error: true # <--- Ignora a falha e continua o pipeline
         working-directory: frontend
         run: npx cypress run --config baseUrl=http://localhost
         env:
           CYPRESS_apiUrl: http://localhost:8081/api
 
-      - name: 🔍 EXIBIR LOGS DE ERRO DETALHADOS NO TERMINAL
-        if: steps.cypress.outcome == 'failure'
+      - name: Exibir logs de erro detalhados
+        if: failure() && steps.cypress.conclusion == 'failure'
         run: |
-          echo "::error::O Cypress falhou! Exibindo logs dos containers abaixo para investigação."
-          
-          echo "::group::📊 LOGS DO BACKEND (Spring Boot)"
+          echo "::group::LOGS DO BACKEND (Spring Boot)"
           docker compose logs backend --tail=200
           echo "::endgroup::"
-          
-          echo "::group::🗄️ LOGS DO BANCO DE DADOS (Postgres)"
+
+          echo "::group::LOGS DO BANCO DE DADOS (Postgres)"
           docker compose logs postgres --tail=100
           echo "::endgroup::"
 
+          echo "::group::LOGS DO EMAIL SERVICE"
+          docker compose logs email-service --tail=100
+          echo "::endgroup::"
+
       - name: Coletar logs em arquivos para download
-        if: steps.cypress.outcome == 'failure'
+        if: failure()
         run: |
           mkdir -p docker-logs
-          docker compose logs postgres > docker-logs/postgres.log 2>&1 || true
-          docker compose logs backend  > docker-logs/backend.log  2>&1 || true
-          docker compose logs frontend > docker-logs/frontend.log 2>&1 || true
+          docker compose logs postgres      > docker-logs/postgres.log      2>&1 || true
+          docker compose logs backend       > docker-logs/backend.log       2>&1 || true
+          docker compose logs email-service > docker-logs/email-service.log 2>&1 || true
+          docker compose logs frontend      > docker-logs/frontend.log      2>&1 || true
 
       - name: Upload Cypress artifacts (falha)
-        if: steps.cypress.outcome == 'failure'
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: cypress-and-docker-logs
