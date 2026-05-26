@@ -168,13 +168,13 @@ services:
       # SMTP
       # =====================================
 
-      MAIL_HOST: ${MAIL_HOST}
-      MAIL_PORT: ${MAIL_PORT}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
 
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
 
-      MAIL_FROM: ${EMAIL_FROM}
+      MAIL_FROM: ${EMAIL_FROM:-noreply@moedaestudantil.local}
 
     ports:
       - "8082:8082"
@@ -196,6 +196,9 @@ services:
 
     depends_on:
       - backend
+
+    environment:
+      BACKEND_URL: http://backend:8081/api/
 
     ports:
       - "80:80"

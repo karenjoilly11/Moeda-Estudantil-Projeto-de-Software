@@ -127,8 +127,7 @@ setTimeout(() => {
       
       window.location.href = "/login";
     } catch (err: any) {
-      console.error("Erro ao excluir conta:", err);
-      alert("❌ Erro ao excluir conta: " + (err.response?.data || err.message));
+      alert("❌ Erro ao excluir conta: " + (typeof err?.body === 'string' ? err.body : err?.message || "Erro desconhecido"));
     } finally {
       setSalvando(false);
     }

@@ -27,6 +27,9 @@ export interface Empresa {
   nome: string;
   email: string;
   cnpj: string;
+  telefone?: string;
+  endereco?: string;
+  descricao?: string;
 }
 
 // ============ AUTH ============

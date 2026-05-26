@@ -116,7 +116,7 @@ const handleEditSubmit = async (e: React.FormEvent) => {
       window.location.reload();
     }, 1500);
   } catch (err: any) {
-    setEditError(err.response?.data || err?.message || "Erro ao atualizar perfil");
+    setEditError(typeof err?.body === 'string' ? err.body : err?.message || "Erro ao atualizar perfil");
   } finally {
     setSalvando(false);
   }

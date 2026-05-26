@@ -220,13 +220,15 @@ export function LoginScreen({ selectedRole, onBack, onLoginSuccess, onCadastroCl
 
                 </div>
 
-                {/* Seed hint */}
-                <p
-                  className="text-xs text-center text-gray-500 mt-2 italic"
-                  style={{ fontFamily: "'Architects Daughter', cursive" }}
-                >
-                  seed: {config.seedEmail} / {config.seedPassword}
-                </p>
+                {/* Seed hint — development only */}
+                {import.meta.env.DEV && (
+                  <p
+                    className="text-xs text-center text-gray-500 mt-2 italic"
+                    style={{ fontFamily: "'Architects Daughter', cursive" }}
+                  >
+                    seed: {config.seedEmail} / {config.seedPassword}
+                  </p>
+                )}
               </form>
             </div>
           </SketchCard>

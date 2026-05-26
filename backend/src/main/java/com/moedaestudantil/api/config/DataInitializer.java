@@ -12,6 +12,7 @@ import com.moedaestudantil.api.repositories.InstituicaoRepository;
 import com.moedaestudantil.api.repositories.ProfessorRepository;
 import com.moedaestudantil.api.repositories.VantagemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile({"default", "docker", "dev"})
 @RequiredArgsConstructor
+@Slf4j
 public class DataInitializer implements CommandLineRunner {
 
     private final InstituicaoRepository instituicaoRepository;
@@ -56,7 +58,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Rua Gonçalves Dias, 276 - Lourdes, Belo Horizonte - MG, 30140-090", 
                 "(31) 3319-4000"));
             
-            System.out.println("✅ Instituições PUC Minas carregadas com sucesso!");
+            log.info("✅ Instituições PUC Minas carregadas com sucesso!");
             
             // =============================================
             // PROFESSORES COM SENHAS INDIVIDUAIS
@@ -127,14 +129,14 @@ public class DataInitializer implements CommandLineRunner {
             profDemo.setSaldoMoedas(1000.0);
             professorRepository.save(profDemo);
             
-            System.out.println("✅ Professores pré-cadastrados com sucesso!");
-            System.out.println("   📍 Campus Coração Eucarístico:");
-            System.out.println("      - Prof. João Paulo Aramuni (Eng. Software) - Senha: @ramuni2024");
-            System.out.println("      - Prof. Jose Laerte (Eng. Computação) - Senha: Laerte@2024");
-            System.out.println("   📍 Campus Barreiro:");
-            System.out.println("      - Prof. Glender da Silva (Sistemas de Informação) - Senha: Glender@2024");
-            System.out.println("   📍 Campus Lourdes:");
-            System.out.println("      - Prof. Joana Gabriela de Souza (Ciência de Dados) - Senha: Joana@2024");
+            log.info("✅ Professores pré-cadastrados com sucesso!");
+            log.info("   📍 Campus Coração Eucarístico:");
+            log.info("      - Prof. João Paulo Aramuni (Eng. Software) - Senha: @ramuni2024");
+            log.info("      - Prof. Jose Laerte (Eng. Computação) - Senha: Laerte@2024");
+            log.info("   📍 Campus Barreiro:");
+            log.info("      - Prof. Glender da Silva (Sistemas de Informação) - Senha: Glender@2024");
+            log.info("   📍 Campus Lourdes:");
+            log.info("      - Prof. Joana Gabriela de Souza (Ciência de Dados) - Senha: Joana@2024");
 
             // =============================================
             // EMPRESA DEMO
@@ -150,8 +152,8 @@ public class DataInitializer implements CommandLineRunner {
             empresaDemo.setInstituicao(pucCoracao);
             Empresa empresaSalva = empresaRepository.save(empresaDemo);
 
-            System.out.println("✅ Empresa demo cadastrada:");
-            System.out.println("      - empresa.demo@livraria.com (CNPJ: 12.345.678/0001-99) - Senha: empresa@2024");
+            log.info("✅ Empresa demo cadastrada:");
+            log.info("      - empresa.demo@livraria.com (CNPJ: 12.345.678/0001-99) - Senha: empresa@2024");
 
             // Empresa DEMO 2 (usada pela UI: LoginScreen seedEmail "empresa.demo@parceiro.com")
             Empresa empresaParceiro = new Empresa();
@@ -163,7 +165,7 @@ public class DataInitializer implements CommandLineRunner {
             empresaParceiro.setDescricao("Empresa parceira de demonstração");
             empresaParceiro.setInstituicao(pucCoracao);
             empresaRepository.save(empresaParceiro);
-            System.out.println("      - empresa.demo@parceiro.com (CNPJ: 98.765.432/0001-10) - Senha: empresa@2024");
+            log.info("      - empresa.demo@parceiro.com (CNPJ: 98.765.432/0001-10) - Senha: empresa@2024");
 
             // =============================================
             // VANTAGENS DE EXEMPLO
@@ -211,7 +213,7 @@ public class DataInitializer implements CommandLineRunner {
             v4.setEmpresa(empresaSalva);
             vantagemRepository.save(v4);
 
-            System.out.println("✅ Vantagens de exemplo carregadas (4 itens, 2 vinculadas à empresa demo).");
+            log.info("✅ Vantagens de exemplo carregadas (4 itens, 2 vinculadas à empresa demo).");
 
             // =============================================
             // ALUNO DEMO (com saldo inicial pra testar resgate)
@@ -230,8 +232,8 @@ public class DataInitializer implements CommandLineRunner {
             alunoDemo.setSaldoMoedas(500.0);
             alunoRepository.save(alunoDemo);
 
-            System.out.println("✅ Aluno demo cadastrado:");
-            System.out.println("      - aluno.demo@pucminas.br (saldo: 500) - Senha: aluno@2024");
+            log.info("✅ Aluno demo cadastrado:");
+            log.info("      - aluno.demo@pucminas.br (saldo: 500) - Senha: aluno@2024");
         }
     }
 }

@@ -7,6 +7,7 @@ import com.moedaestudantil.api.dto.AlunoResponseDTO;
 import com.moedaestudantil.api.dto.LoginRequestDTO;
 import com.moedaestudantil.api.services.AlunoService;
 import com.moedaestudantil.api.util.TokenUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -59,7 +60,7 @@ public class AlunoController {
     }
 
     @PutMapping("/senha")
-    public ResponseEntity<?> alterarSenha(@RequestBody AlterarSenhaDTO dto,
+    public ResponseEntity<?> alterarSenha(@Valid @RequestBody AlterarSenhaDTO dto,
                                           @RequestHeader(value = "Authorization", required = false) String authorization) {
         Long alunoId = extractAlunoIdFromToken(authorization);
         alunoService.alterarSenha(alunoId, dto.getSenhaAtual(), dto.getNovaSenha());

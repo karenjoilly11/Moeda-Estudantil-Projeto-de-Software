@@ -24,8 +24,8 @@ FROM nginx:1.27-alpine AS runtime
 # wget pra healthcheck (nginx:alpine não traz por padrão)
 RUN apk add --no-cache wget
 
-# Substitui config default por uma com SPA fallback + proxy /api
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Template processado pelo envsubst do nginx:alpine no startup
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
