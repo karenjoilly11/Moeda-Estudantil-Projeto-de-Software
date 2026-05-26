@@ -3,6 +3,7 @@ package com.moedaestudantil.api.controller;
 import com.moedaestudantil.api.dto.ProfessorLoginDTO;
 import com.moedaestudantil.api.services.ProfessorService;
 import com.moedaestudantil.api.util.TokenUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,8 +22,15 @@ public class ProfessorController {
         return ResponseEntity.ok(professorService.login(dto));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> buscarPorId(@PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        extractProfessorIdFromToken(authorization);
+        return ResponseEntity.ok(professorService.buscarPorId(id));
+    }
+
     @PostMapping("/enviar-moedas")
-    public ResponseEntity<?> enviarMoedas(@RequestBody EnviarMoedasDTO dto,
+    public ResponseEntity<?> enviarMoedas(@Valid @RequestBody EnviarMoedasDTO dto,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         Long professorId = extractProfessorIdFromToken(authorization);
         EnvioMoedasResponseDTO response = professorService.enviarMoedas(professorId, dto);

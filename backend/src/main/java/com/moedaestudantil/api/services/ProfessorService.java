@@ -74,6 +74,12 @@ public class ProfessorService {
                 .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
     }
 
+    public ProfessorResponseDTO buscarPorId(Long id) {
+        Professor professor = professorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
+        return toResponseDTO(professor);
+    }
+
     // =====================================================
     // ENVIAR MOEDAS
     // =====================================================

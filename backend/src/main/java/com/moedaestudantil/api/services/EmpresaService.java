@@ -91,6 +91,8 @@ public class EmpresaService {
         dto.setCnpj(empresa.getCnpj());
         dto.setDescricao(empresa.getDescricao());
         dto.setInstituicaoNome(empresa.getInstituicao() != null ? empresa.getInstituicao().getNome() : null);
+        dto.setTelefone(empresa.getTelefone());
+        dto.setEndereco(empresa.getEndereco());
         return dto;
     }
 

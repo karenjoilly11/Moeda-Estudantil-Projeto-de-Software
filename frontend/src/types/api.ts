@@ -69,7 +69,6 @@ export interface AlunoResumo {
 }
 
 export interface EnvioMoedasRequest {
-  professorId: number;
   alunoId: number;
   valor: number;
   mensagem: string;

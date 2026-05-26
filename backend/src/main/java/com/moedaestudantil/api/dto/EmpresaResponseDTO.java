@@ -10,4 +10,6 @@ public class EmpresaResponseDTO {
     private String cnpj;
     private String descricao;
     private String instituicaoNome;
+    private String telefone;
+    private String endereco;
 }

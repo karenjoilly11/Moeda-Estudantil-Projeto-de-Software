@@ -129,7 +129,6 @@ export function ProfessorDashboard({ professor: initialProfessor, onLogout }: Pr
     
     try {
       const response = await professorService.enviarMoedas({
-        professorId: professor.id,
         alunoId: selectedStudent.id,
         valor: amount,
         mensagem: reason
