@@ -9,7 +9,7 @@ describe('Empresa - Golden Path (login + validar/utilizar cupom)', () => {
     cy.contains('Empresa').click()
     cy.get('input[type=email]', { timeout: 10000 }).should('have.value', 'empresa.demo@parceiro.com')
     cy.get('input[type=password]').should('have.value', 'empresa@2024')
-    cy.contains(/entrar/i).click()
+    cy.get('button[type=submit]').click()
     // CompanyDashboard tem sidebar com "minhas vantagens"
     cy.contains(/vantagens|cupom|valida/i, { timeout: 15000 }).should('be.visible')
   })

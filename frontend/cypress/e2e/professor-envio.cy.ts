@@ -9,7 +9,7 @@ describe('Professor - Golden Path (login + envio de moedas)', () => {
     cy.contains('Professor').click()
     cy.get('input[type=email]', { timeout: 10000 }).should('have.value', 'professor.demo@pucminas.br')
     cy.get('input[type=password]').should('have.value', 'professor@2024')
-    cy.contains(/entrar/i).click()
+    cy.get('button[type=submit]').click()
     // Dashboard professor - procura por texto característico
     cy.contains(/Professor|Demonstra|moedas|saldo/i, { timeout: 15000 }).should('be.visible')
   })

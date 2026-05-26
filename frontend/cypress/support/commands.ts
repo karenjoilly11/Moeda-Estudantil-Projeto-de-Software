@@ -45,7 +45,7 @@ Cypress.Commands.add('loginViaUI', (role, email, senha) => {
   cy.contains(labels[role]).click()
   cy.get('input[type=email]').first().clear().type(email)
   cy.get('input[type=password]').first().clear().type(senha)
-  cy.contains(/entrar|login/i).click()
+  cy.get('button[type=submit]').click()
 })
 
 export {}

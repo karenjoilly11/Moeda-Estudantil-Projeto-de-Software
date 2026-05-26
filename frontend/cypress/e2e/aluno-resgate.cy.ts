@@ -14,7 +14,7 @@ describe('Aluno - Golden Path (login + ver dashboard)', () => {
     cy.get('input[type=password]').should('have.value', 'aluno@2024')
 
     // 3. Submete (botão "entrar")
-    cy.contains(/entrar/i).click()
+    cy.get('button[type=submit]').click()
 
     // 4. Dashboard carrega - saudação com "Aluno"
     cy.contains(/Aluno|Demonstra/i, { timeout: 15000 }).should('be.visible')
