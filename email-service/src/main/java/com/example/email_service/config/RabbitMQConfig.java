@@ -8,28 +8,46 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String RECEBIMENTO_QUEUE = "email.recebimento.queue";
-    public static final String ENVIO_QUEUE = "email.envio.queue";
-    public static final String RESGATE_ALUNO_QUEUE = "email.resgate.aluno.queue";
+    public static final String RECEBIMENTO_QUEUE     = "email.recebimento.queue";
+    public static final String ENVIO_QUEUE           = "email.envio.queue";
+    public static final String RESGATE_ALUNO_QUEUE   = "email.resgate.aluno.queue";
     public static final String RESGATE_EMPRESA_QUEUE = "email.resgate.empresa.queue";
+    public static final String DEAD_LETTER_QUEUE     = "email.dead-letter.queue";
+
+    @Bean
+    public Queue deadLetterQueue() {
+        return QueueBuilder.durable(DEAD_LETTER_QUEUE).build();
+    }
 
     @Bean
     public Queue recebimentoQueue() {
-        return QueueBuilder.durable(RECEBIMENTO_QUEUE).build();
+        return QueueBuilder.durable(RECEBIMENTO_QUEUE)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", DEAD_LETTER_QUEUE)
+                .build();
     }
 
     @Bean
     public Queue envioQueue() {
-        return QueueBuilder.durable(ENVIO_QUEUE).build();
+        return QueueBuilder.durable(ENVIO_QUEUE)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", DEAD_LETTER_QUEUE)
+                .build();
     }
 
     @Bean
     public Queue resgateAlunoQueue() {
-        return QueueBuilder.durable(RESGATE_ALUNO_QUEUE).build();
+        return QueueBuilder.durable(RESGATE_ALUNO_QUEUE)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", DEAD_LETTER_QUEUE)
+                .build();
     }
 
     @Bean
     public Queue resgateEmpresaQueue() {
-        return QueueBuilder.durable(RESGATE_EMPRESA_QUEUE).build();
+        return QueueBuilder.durable(RESGATE_EMPRESA_QUEUE)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", DEAD_LETTER_QUEUE)
+                .build();
     }
 }

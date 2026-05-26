@@ -95,7 +95,7 @@ public class EmailService {
             
         } catch (Exception e) {
             log.error("Erro ao enviar email para {}: {}", para, e.getMessage());
-            throw new RuntimeException("Falha ao enviar email", e);
+            // Não repropaga: falha de SMTP não deve rejeitar a mensagem da fila
         }
     }
 }
