@@ -1,0 +1,136 @@
+@startuml
+title **UC - Trocar Moedas**
+header **Sistema de Moeda Estudantil**
+footer **\n© Karen Joilly, Josué Goulart, Luiz Fernando**
+
+actor Aluno as Aluno
+participant "App\nAluno" as APP
+participant API
+participant "Servico\nMoedas" as MOEDAS
+participant "Servico\nVantagens" as VANTAGENS
+database DB
+participant "Servico\nCupom" as CUPOM
+participant NOTIF
+
+== 1. Acesso a area de vantagens ==
+
+Aluno -> APP: 1.1 acessarTrocarMoedas()
+activate APP
+
+APP -> API: 1.2 GET /vantagens
+activate API
+
+API -> VANTAGENS: 1.3 listarVantagensAtivas()
+activate VANTAGENS
+
+VANTAGENS -> DB: 1.4 SELECT * FROM vantagens WHERE ativa = true
+activate DB
+DB --> VANTAGENS: 1.5 listaVantagens
+deactivate DB
+
+VANTAGENS --> API: 1.6 dadosVantagens
+deactivate VANTAGENS
+
+API --> APP: 1.7 listaVantagensJSON
+deactivate API
+
+APP --> Aluno: 1.8 exibirCatalogoVantagens()
+deactivate APP
+
+== 2. Selecionar vantagem ==
+
+Aluno -> APP: 2.1 selecionarVantagem(id)
+activate APP
+
+APP -> API: 2.2 POST /trocar/{idVantagem}
+activate API
+
+API -> VANTAGENS: 2.3 buscarVantagem(id)
+activate VANTAGENS
+
+VANTAGENS -> DB: 2.4 SELECT custo FROM vantagens WHERE id = {id}
+activate DB
+DB --> VANTAGENS: 2.5 custoVantagem
+deactivate DB
+
+VANTAGENS --> API: 2.6 dadosVantagem(custo)
+deactivate VANTAGENS
+
+API -> MOEDAS: 2.7 verificarSaldo(alunoId, custo)
+activate MOEDAS
+
+MOEDAS -> DB: 2.8 SELECT saldo FROM aluno_moedas WHERE aluno_id = {alunoId}
+activate DB
+DB --> MOEDAS: 2.9 saldoAtual
+deactivate DB
+
+== 3. Verificar saldo suficiente ==
+
+alt saldo >= custo
+    MOEDAS --> API: 3.1 saldoSuficiente(true)
+    deactivate MOEDAS
+
+    == 4. Processar troca ==
+
+    API -> MOEDAS: 4.1 debitarMoedas(alunoId, custo, vantagemId)
+    activate MOEDAS
+
+    MOEDAS -> DB: 4.2 BEGIN TRANSACTION
+    activate DB
+
+    MOEDAS -> DB: 4.3 UPDATE aluno_moedas SET saldo = saldo - {custo} WHERE aluno_id = {alunoId}
+    DB --> MOEDAS: 4.4 rowsAffected=1
+
+    MOEDAS -> DB: 4.5 INSERT INTO transacoes (aluno_id, tipo, valor, vantagem_id) VALUES ({alunoId}, "TROCA", {custo}, {vantagemId})
+    DB --> MOEDAS: 4.6 transacaoId
+
+    MOEDAS -> DB: 4.7 COMMIT
+    DB --> MOEDAS: 4.8 commitOk
+    deactivate DB
+
+    MOEDAS --> API: 4.9 debitoSucesso(transacaoId)
+    deactivate MOEDAS
+
+    == 5. Gerar codigo de cupom ==
+
+    API -> CUPOM: 5.1 gerarCupom(alunoId, vantagemId, transacaoId)
+    activate CUPOM
+
+    CUPOM -> DB: 5.2 SELECT nome, descricao FROM vantagens WHERE id = {vantagemId}
+    activate DB
+    DB --> CUPOM: 5.3 dadosVantagem
+    deactivate DB
+
+    CUPOM -> CUPOM: 5.4 gerarCodigoUnico()
+
+    CUPOM -> DB: 5.5 INSERT INTO cupons (codigo, aluno_id, vantagem_id, data_validade, usado) VALUES ({codigo}, {alunoId}, {vantagemId}, NOW() + INTERVAL 30 DAY, false)
+    activate DB
+    DB --> CUPOM: 5.6 cupomId
+    deactivate DB
+
+    CUPOM --> API: 5.7 cupomGerado(codigo, validade)
+    deactivate CUPOM
+
+    API --> APP: 5.8 trocaSucesso(cupom, vantagemNome)
+    deactivate API
+
+    APP --> Aluno: 5.9 exibirCupom("Parabens! Voce resgatou {vantagemNome}\nCodigo: {codigo}\nValido ate {validade}")
+    deactivate APP
+
+    == 6. Notificacao (assincrona) ==
+
+    API --> NOTIF: 6.1 notificarAluno(alunoId, "TROCA", custo, vantagemNome)
+    note right of NOTIF : Assincrono
+
+else saldo < custo
+    MOEDAS --> API: 3.2 saldoSuficiente(false)
+    deactivate MOEDAS
+
+    API --> APP: 3.3 erroSaldoInsuficiente()
+    deactivate API
+
+    APP --> Aluno: 3.4 exibirErro("Saldo insuficiente!\nVoce tem {saldo} moedas\nFaltam {custo - saldo} moedas")
+    deactivate APP
+end
+
+@enduml
