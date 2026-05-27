@@ -1,0 +1,129 @@
+@startuml
+!theme plain
+title **UC Gerenciar Conta**
+header **Sistema de Moeda Estudantil**
+footer **\n© Karen Joilly, Josué Goulart, Luiz Fernando **
+
+actor Usuario as Usuario
+participant "App\nMobile" as APP
+participant API
+participant "Serviço\nAutenticacao" as AUTH
+database DB
+
+== 1. Acesso ao sistema ==
+
+Usuario -> APP: 1.1 acessarGerenciarConta()
+activate APP
+
+APP -> API: 1.2 GET /conta/dados
+activate API
+
+API -> AUTH: 1.3 verificarToken()
+activate AUTH
+
+AUTH -> DB: 1.4 SELECT * FROM sessoes WHERE token = {token}
+activate DB
+DB --> AUTH: 1.5 dadosSessao
+deactivate DB
+
+AUTH -> AUTH: 1.6 validarExpiracao()
+
+alt token valido
+    AUTH --> API: 1.7 tokenValido(usuarioId)
+    deactivate AUTH
+
+    == 2. Buscar dados da conta ==
+
+    API -> DB: 2.1 SELECT id, nome, email, saldo, tipo FROM usuarios WHERE id = {usuarioId}
+    activate DB
+    DB --> API: 2.2 dadosUsuario
+    deactivate DB
+
+    API --> APP: 2.3 dadosContaJSON
+    deactivate API
+
+    APP --> Usuario: 2.4 exibirDadosConta()
+    deactivate APP
+
+    == 3. Autenticar usuario (include) ==
+
+    Usuario -> APP: 3.1 solicitarAlteracaoDados()
+    activate APP
+
+    APP -> API: 3.2 POST /conta/alterar
+    activate API
+
+    API -> AUTH: 3.3 solicitarAutenticacao()
+    activate AUTH
+
+    AUTH --> API: 3.4 desafioAutenticacao()
+    deactivate AUTH
+
+    API --> APP: 3.5 solicitarSenha()
+    deactivate API
+
+    APP --> Usuario: 3.6 exibirModalSenha()
+    deactivate APP
+
+    Usuario -> APP: 3.7 informarSenha()
+    activate APP
+
+    APP -> API: 3.8 POST /auth/validar {senha}
+    activate API
+
+    API -> AUTH: 3.9 validarCredenciais(usuarioId, senha)
+    activate AUTH
+
+    AUTH -> DB: 3.10 SELECT senha_hash FROM usuarios WHERE id = {usuarioId}
+    activate DB
+    DB --> AUTH: 3.11 hashArmazenado
+    deactivate DB
+
+    alt senha correta
+        AUTH --> API: 3.12 autenticacaoSucesso()
+        deactivate AUTH
+
+        == 4. Atualizar dados da conta ==
+
+        API -> DB: 4.1 BEGIN TRANSACTION
+        activate DB
+
+        API -> DB: 4.2 UPDATE usuarios SET nome = {novoNome}, email = {novoEmail} WHERE id = {usuarioId}
+        DB --> API: 4.3 rowsAffected=1
+
+        API -> DB: 4.4 INSERT INTO log_alteracoes (usuario_id, data, alteracao) VALUES ({usuarioId}, NOW(), "DADOS_ATUALIZADOS")
+        DB --> API: 4.5 logId
+
+        API -> DB: 4.6 COMMIT
+        DB --> API: 4.7 commitOk
+        deactivate DB
+
+        API --> APP: 4.8 atualizacaoSucesso()
+        deactivate API
+
+        APP --> Usuario: 4.9 exibirConfirmacao("Dados atualizados com sucesso!")
+        deactivate APP
+
+    else senha incorreta
+        AUTH --> API: 3.13 autenticacaoFalhou()
+        deactivate AUTH
+
+        API --> APP: 3.14 erroAutenticacao()
+        deactivate API
+
+        APP --> Usuario: 3.15 exibirErro("Senha incorreta. Tente novamente.")
+        deactivate APP
+    end
+
+else token invalido ou expirado
+    AUTH --> API: 1.8 tokenInvalido()
+    deactivate AUTH
+
+    API --> APP: 1.9 erroSessaoExpirada()
+    deactivate API
+
+    APP --> Usuario: 1.10 exibirLogin("Sessao expirada. Faca login novamente.")
+    deactivate APP
+end
+
+@enduml
