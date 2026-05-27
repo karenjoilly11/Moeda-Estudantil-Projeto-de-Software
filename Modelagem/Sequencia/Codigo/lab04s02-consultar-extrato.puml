@@ -1,0 +1,212 @@
+@startuml
+
+' ============================================
+' CABEÇALHO E CONFIGURAÇÕES
+' ============================================
+
+title **UC - Consultar Extrato**
+header **Sistema de Moeda Estudantil**
+footer **\n© Karen Joilly, Josué Goulart, Luiz Fernando **
+
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequenceParticipantBorderThickness 1.5
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+
+' ============================================
+' LEGENDA
+' ============================================
+
+legend right
+  **Legenda**
+  ==
+  | **Símbolo** | **Significado** |
+  | --- | --- |
+  | → | Chamada síncrona |
+  | →> | Chamada assíncrona |
+  | --> | Retorno |
+  | alt | Alternativa (if/else) |
+  | opt | Opcional |
+  | loop | Repetição |
+  | <<extend>> | Comportamento estendido (opcional) |
+  | actor | Ator externo |
+  | participant | Participante do sistema |
+  | database | Banco de dados |
+  ==
+end legend
+
+' ============================================
+' ATORES E PARTICIPANTES
+' ============================================
+
+actor Aluno as ALUNO
+actor Professor as PROF
+participant "Frontend\n(React)" as WEB
+participant "API Gateway" as API
+participant "Auth Service" as AUTH
+participant "Moedas Service" as MOEDAS
+database "Banco de Dados\n(PostgreSQL)" as DB
+
+' ============================================
+' FLUXO PRINCIPAL
+' ============================================
+
+== 1. Acesso à tela de extrato ==
+
+note over ALUNO, PROF
+  **Aluno ou Professor** acessa seu respectivo dashboard
+end note
+
+ALUNO -> WEB: 1.1 acessarDashboard() (Aluno)
+PROF -> WEB: 1.1 acessarDashboard() (Professor)
+
+activate WEB
+
+WEB -> API: 1.2 GET /{role}/extrato
+note right: role = "aluno" ou "professor"
+
+activate API
+
+API -> AUTH: 1.3 validarToken(token)
+activate AUTH
+
+AUTH --> API: 1.4 tokenVálido(usuarioId, role)
+deactivate AUTH
+
+API -> MOEDAS: 1.5 consultarExtrato(usuarioId, role)
+activate MOEDAS
+
+== 2. Busca de transações e saldo ==
+
+MOEDAS -> DB: 2.1 SELECT * FROM transacoes WHERE {role}_id = :usuarioId ORDER BY data DESC
+activate DB
+
+DB --> MOEDAS: 2.2 listaTransacoes
+deactivate DB
+
+MOEDAS -> DB: 2.3 SELECT saldo FROM {role}s WHERE id = :usuarioId
+activate DB
+
+DB --> MOEDAS: 2.4 saldoAtual
+deactivate DB
+
+MOEDAS --> API: 2.5 extratoCompleto(transacoes, saldo)
+deactivate MOEDAS
+
+API --> WEB: 2.6 dadosExtrato
+deactivate API
+
+WEB --> ALUNO: 2.7 exibirExtrato(saldo, transacoes) [Aluno]
+WEB --> PROF: 2.7 exibirExtrato(saldo, transacoes) [Professor]
+deactivate WEB
+
+' ============================================
+' EXTENDS: VISUALIZAR SALDO
+' ============================================
+
+== 3. Extends: Visualizar Saldo (opcional) ==
+
+ALUNO -> WEB: 3.1 clicarVerSaldo() [Aluno]
+PROF -> WEB: 3.1 clicarVerSaldo() [Professor]
+activate WEB
+
+WEB -> WEB: 3.2 destacarCardSaldo()
+WEB -> WEB: 3.3 exibirDetalhamentoSaldo(saldo, limite, creditosSemestre)
+
+WEB --> ALUNO: 3.4 mostrarPopupSaldo() [Aluno]
+WEB --> PROF: 3.4 mostrarPopupSaldo() [Professor]
+deactivate WEB
+
+note right of ALUNO
+  **<<extend>> Visualizar Saldo**
+  Aluno ou Professor pode visualizar
+  detalhes adicionais do saldo
+  (sem recarregar a página)
+end note
+
+' ============================================
+' EXTENDS: VISUALIZAR TRANSAÇÕES
+' ============================================
+
+== 4. Extends: Visualizar Transações (opcional) ==
+
+ALUNO -> WEB: 4.1 clicarTransacao(transacaoId) [Aluno]
+PROF -> WEB: 4.1 clicarTransacao(transacaoId) [Professor]
+activate WEB
+
+WEB -> API: 4.2 GET /transacao/{transacaoId}/detalhes
+activate API
+
+API -> AUTH: 4.3 validarToken(token)
+activate AUTH
+
+AUTH --> API: 4.4 tokenVálido(usuarioId)
+deactivate AUTH
+
+API -> MOEDAS: 4.5 buscarDetalhesTransacao(transacaoId, usuarioId, role)
+activate MOEDAS
+
+MOEDAS -> DB: 4.6 SELECT * FROM transacoes WHERE id = :transacaoId AND ({role}_id = :usuarioId OR tipo = 'ENVIO')
+activate DB
+
+DB --> MOEDAS: 4.7 detalhesTransacao
+deactivate DB
+
+MOEDAS --> API: 4.8 detalhes
+deactivate MOEDAS
+
+API --> WEB: 4.9 detalhesTransacao
+deactivate API
+
+WEB -> WEB: 4.10 abrirModalDetalhes()
+WEB --> ALUNO: 4.11 exibirDetalhesTransacao(dados) [Aluno]
+WEB --> PROF: 4.11 exibirDetalhesTransacao(dados) [Professor]
+deactivate WEB
+
+note right of ALUNO
+  **<<extend>> Visualizar Transações**
+  Aluno ou Professor pode ver detalhes
+  completos de uma transação específica
+  (contraparte, mensagem, data)
+end note
+
+' ============================================
+' FLUXOS ALTERNATIVOS (Filtros)
+' ============================================
+
+== 5. Filtros e ordenação (opcional) ==
+
+ALUNO -> WEB: 5.1 aplicarFiltro(tipo, periodo) [Aluno]
+PROF -> WEB: 5.1 aplicarFiltro(tipo, periodo) [Professor]
+activate WEB
+
+WEB -> API: 5.2 GET /{role}/extrato?tipo={tipo}&periodo={periodo}
+activate API
+
+API -> AUTH: 5.3 validarToken(token)
+activate AUTH
+
+AUTH --> API: 5.4 tokenVálido(usuarioId)
+deactivate AUTH
+
+API -> MOEDAS: 5.5 consultarExtratoComFiltro(usuarioId, role, tipo, periodo)
+activate MOEDAS
+
+MOEDAS -> DB: 5.6 SELECT * FROM transacoes WHERE {role}_id = :usuarioId AND tipo = :tipo AND data >= :periodo
+activate DB
+
+DB --> MOEDAS: 5.7 transacoesFiltradas
+deactivate DB
+
+MOEDAS --> API: 5.8 extratoFiltrado
+deactivate MOEDAS
+
+API --> WEB: 5.9 dadosFiltrados
+deactivate API
+
+WEB --> ALUNO: 5.10 exibirExtratoAtualizado(transacoesFiltradas) [Aluno]
+WEB --> PROF: 5.10 exibirExtratoAtualizado(transacoesFiltradas) [Professor]
+deactivate WEB
+
+@enduml
