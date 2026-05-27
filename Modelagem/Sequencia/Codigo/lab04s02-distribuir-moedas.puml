@@ -1,0 +1,252 @@
+@startuml
+
+' ============================================
+' CONFIGURAÇÕES GLOBAIS
+' ============================================
+
+title **UC - Distribuir Moedas**
+header **Sistema de Moeda Estudantil**
+footer **\n© Karen Joilly, Josué Goulart, Luiz Fernando **
+
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 12
+skinparam sequenceParticipantBorderThickness 2
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+
+' Cores dos participantes
+skinparam participant {
+  BackgroundColor #E8F4FD
+  BorderColor #1A5D8F
+  FontColor #1A5D8F
+}
+
+skinparam actor {
+  BackgroundColor #D4E6F1
+  BorderColor #1A5D8F
+  FontColor #1A5D8F
+}
+
+skinparam database {
+  BackgroundColor #E8E8E8
+  BorderColor #555555
+  FontColor #333333
+}
+
+' Cores para notas
+skinparam note {
+  BackgroundColor #FFF8E1
+  BorderColor #FFB300
+  FontColor #333333
+}
+
+' ============================================
+' LEGENDA
+' ============================================
+
+legend right
+  **Legenda**
+  <size:10>
+  |<back:#1A5D8F> <color:white> Símbolo </color> </back>| <back:#FEFEFE> <color:#1A5D8F> Significado </color> </back>|
+  | → | Chamada síncrona |
+  | →> | Chamada assíncrona |
+  | --> | Retorno |
+  | alt | Alternativa (if/else) |
+  | opt | Opcional |
+  | loop | Repetição |
+  | **«include»** | Comportamento incluído (obrigatório) |
+  | actor | Ator externo |
+  | participant | Participante do sistema |
+  | database | Banco de dados |
+  </size>
+end legend
+
+' ============================================
+' ATORES E PARTICIPANTES
+' ============================================
+
+actor Professor as PROF
+participant "Frontend\n(React)" as WEB
+participant "API Gateway" as API
+participant "Auth Service" as AUTH
+participant "Moedas Service" as MOEDAS
+participant "Notificação\nService" as NOTIF
+database "Banco de Dados\n(PostgreSQL)" as DB
+
+' ============================================
+' FLUXO 1: ACESSO À TELA
+' ============================================
+
+== 1. Acesso à tela de distribuição ==
+
+PROF -> WEB: 1.1 acessarDashboard()
+activate WEB
+
+WEB -> API: 1.2 GET /professor/saldo
+activate API
+
+API -> AUTH: 1.3 validarToken(token)
+activate AUTH
+
+AUTH --> API: 1.4 tokenVálido(professorId)
+deactivate AUTH
+
+API -> MOEDAS: 1.5 consultarSaldo(professorId)
+activate MOEDAS
+
+MOEDAS -> DB: 1.6 SELECT saldo FROM professores WHERE id = ?
+activate DB
+
+DB --> MOEDAS: 1.7 saldoAtual
+deactivate DB
+
+MOEDAS --> API: 1.8 saldo + dadosProfessor
+deactivate MOEDAS
+
+API --> WEB: 1.9 saldoDisponivel + listaAlunos
+deactivate API
+
+WEB --> PROF: 1.10 exibirFormulario(saldo, alunos)
+deactivate WEB
+
+' ============================================
+' FLUXO 2: PREENCHIMENTO E ENVIO
+' ============================================
+
+== 2. Preenchimento e envio ==
+
+PROF -> WEB: 2.1 selecionarAluno(alunoId)
+activate WEB
+
+PROF -> WEB: 2.2 informarValor(valor)
+WEB -> WEB: 2.3 validarValorMinimo(valor)
+
+PROF -> WEB: 2.4 escreverMensagem(motivo)
+WEB -> WEB: 2.5 validarMensagemObrigatoria(motivo)
+
+PROF -> WEB: 2.6 clicarEnviar()
+
+WEB -> API: 2.7 POST /professor/enviar-moedas
+note right of WEB: {alunoId, valor, mensagem}
+
+activate API
+
+API -> AUTH: 2.8 validarToken(token)
+activate AUTH
+
+AUTH --> API: 2.9 tokenVálido(professorId)
+deactivate AUTH
+
+API -> MOEDAS: 2.10 enviarMoedas(professorId, alunoId, valor, mensagem)
+activate MOEDAS
+
+' ============================================
+' INCLUDE 1: POSSUIR SALDO SUFICIENTE
+' ============================================
+
+== 3. Inclui: Possuir Saldo Suficiente (obrigatório) ==
+
+MOEDAS -> DB: 3.1 SELECT saldo FROM professores WHERE id = ?
+activate DB
+
+DB --> MOEDAS: 3.2 saldoProfessor
+deactivate DB
+
+alt Saldo Insuficiente
+
+    note right of MOEDAS #FFCDD2
+      ** Saldo Insuficiente **
+      Retorna erro ao professor
+    end note
+
+    MOEDAS --> API: 3.3 erro("Saldo insuficiente")
+    API --> WEB: 3.4 erro
+    WEB --> PROF: 3.5 exibirErro("Saldo insuficiente")
+
+else Saldo Suficiente
+
+    note right of MOEDAS #C8E6C9
+      ** Saldo Suficiente **
+      Prossegue com a transação
+    end note
+
+    ' ============================================
+    ' INCLUDE 2: INDICAR ALUNO
+    ' ============================================
+
+    == 4. Inclui: Indicar Aluno (obrigatório) ==
+
+    MOEDAS -> DB: 4.1 SELECT * FROM alunos WHERE id = ?
+    activate DB
+
+    DB --> MOEDAS: 4.2 dadosAluno
+    deactivate DB
+
+    alt Aluno Não Encontrado
+
+        MOEDAS --> API: 4.3 erro("Aluno não encontrado")
+        API --> WEB: 4.4 erro
+        WEB --> PROF: 4.5 exibirErro("Aluno não encontrado")
+
+    else Aluno Encontrado
+
+        ' ============================================
+        ' INCLUDE 3: ESCREVER MENSAGEM
+        ' ============================================
+
+        == 5. Inclui: Escrever Mensagem (obrigatório) ==
+
+        alt Mensagem Vazia
+
+            MOEDAS --> API: 5.1 erro("Mensagem de reconhecimento é obrigatória")
+            API --> WEB: 5.2 erro
+            WEB --> PROF: 5.3 exibirErro("Mensagem obrigatória")
+
+        else Mensagem Válida
+
+            ' ============================================
+            ' FLUXO 6: PROCESSAMENTO DA TRANSAÇÃO
+            ' ============================================
+
+            == 6. Processamento da transação ==
+
+            MOEDAS -> DB: 6.1 INICIAR TRANSACAO
+            activate DB
+
+            MOEDAS -> DB: 6.2 UPDATE professores SET saldo = saldo - valor WHERE id = professorId
+            MOEDAS -> DB: 6.3 UPDATE alunos SET saldo = saldo + valor WHERE id = alunoId
+
+            MOEDAS -> DB: 6.4 INSERT INTO transacoes (professor_id, aluno_id, valor, tipo, mensagem, data)
+            note right of MOEDAS: tipo = "ENVIO"
+
+            DB --> MOEDAS: 6.5 transacaoRegistrada
+            DB -> DB: 6.6 COMMIT
+
+            deactivate DB
+
+            MOEDAS --> API: 6.7 sucesso(dadosTransacao)
+            deactivate MOEDAS
+
+            ' ============================================
+            ' FLUXO 7: NOTIFICAÇÃO ASSÍNCRONA
+            ' ============================================
+
+            
+API --> NOTIF: 7.1 notificarAluno(alunoId, valor, mensagem)
+activate NOTIF
+
+NOTIF -> DB: 7.2 registrarLogNotificacao(alunoId, "RECEBIMENTO")
+activate DB
+DB --> NOTIF: 7.3 logRegistrado
+deactivate DB
+
+NOTIF --> PROF: 7.4 emailConfirmacao(professor)
+NOTIF --> ALUNO: 7.5 emailNotificacao("Você recebeu {valor} moedas")
+
+deactivate NOTIF
+
+        end
+    end
+end
+
+@enduml
