@@ -1,0 +1,74 @@
+@startuml
+top to bottom direction
+skinparam componentStyle uml2
+
+actor "Usuário\n(Web/Mobile)" as user
+
+cloud "Internet" {
+
+    node "Render Frontend" {
+
+        node "<<device>>\nServidor Web" as frontend {
+            component "<<component>>\nFrontend React\n(Vite + Nginx)" as react
+        }
+
+    }
+
+    node "Render Backend" {
+
+        node "<<device>>\nServidor Aplicação" as backend {
+
+            component "<<component>>\nAuthController" as auth
+
+            component "<<component>>\nTrocaMoedaService" as troca
+
+            component "<<component>>\nCupomService" as cupom
+
+            component "<<component>>\nNotificacaoService" as notif
+
+        }
+
+    }
+
+    database "<<device>>\nPostgreSQL Render" as db {
+        component "<<component>>\nBanco de Dados" as tabelas
+    }
+
+    queue "CloudAMQP\nRabbitMQ" as rabbit
+
+    node "Serviço Externo" {
+
+        component "SMTP Gmail" as gmail
+
+        component "QR Code API" as qr
+
+    }
+
+}
+
+user --> react : HTTPS
+
+react --> auth : REST API
+react --> troca : REST API
+
+auth --> db : JDBC
+troca --> db : JDBC
+cupom --> db : JDBC
+
+troca --> cupom : gerarCupom()
+
+troca --> notif : enviarNotificacao()
+
+notif --> gmail : SMTP
+
+troca --> rabbit : AMQP
+
+cupom --> qr : gerarQRCode()
+
+footer
+Projeto de Software - PUC Minas
+Moeda Estudantil
+Josué Goulart • Karen Joilly • Luiz Fernando
+endfooter
+
+@enduml
