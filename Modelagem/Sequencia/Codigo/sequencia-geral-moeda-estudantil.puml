@@ -1,0 +1,180 @@
+@startuml
+!theme plain
+
+title **Fluxo Geral do Sistema Moeda Estudantil**
+header **Sistema de Moeda Estudantil**
+footer **\n© Karen Joilly, Josué Goulart, Luiz Fernando**
+
+actor Professor
+actor Aluno
+actor Empresa
+
+participant "Frontend\nReact" as FRONT
+participant "AuthController" as AUTH
+participant "ProfessorService" as PROF
+participant "TrocaMoedaService" as TROCA
+participant "CupomService" as CUPOM
+participant "NotificacaoService" as NOTIF
+
+database PostgreSQL as DB
+
+== 1. Login ==
+
+Aluno -> FRONT : 1.1 realizarLogin()
+activate FRONT
+
+FRONT -> AUTH : 1.2 autenticarUsuario()
+activate AUTH
+
+AUTH -> DB : 1.3 SELECT usuario
+activate DB
+
+DB --> AUTH : 1.4 dadosUsuario
+deactivate DB
+
+AUTH --> FRONT : 1.5 loginValido()
+deactivate AUTH
+
+FRONT --> Aluno : 1.6 acessoLiberado()
+deactivate FRONT
+
+== 2. Professor distribui moedas ==
+
+Professor -> FRONT : 2.1 selecionarAluno()
+
+activate FRONT
+
+FRONT -> PROF : 2.2 enviarMoedas()
+activate PROF
+
+PROF -> DB : 2.3 atualizarSaldoAluno()
+activate DB
+
+DB --> PROF : 2.4 saldoAtualizado
+
+PROF -> DB : 2.5 registrarTransacao()
+
+DB --> PROF : 2.6 transacaoRegistrada
+deactivate DB
+
+PROF -> NOTIF : 2.7 enviarEmailAluno()
+activate NOTIF
+
+NOTIF --> PROF : 2.8 emailEnviado
+deactivate NOTIF
+
+PROF --> FRONT : 2.9 operacaoConcluida()
+deactivate PROF
+
+FRONT --> Professor : 2.10 exibirSucesso()
+deactivate FRONT
+
+== 3. Aluno consulta saldo ==
+
+Aluno -> FRONT : 3.1 consultarExtrato()
+
+activate FRONT
+
+FRONT -> DB : 3.2 buscarSaldoExtrato()
+
+activate DB
+
+DB --> FRONT : 3.3 dadosExtrato()
+
+deactivate DB
+
+FRONT --> Aluno : 3.4 exibirExtrato()
+
+deactivate FRONT
+
+== 4. Troca de moedas ==
+
+Aluno -> FRONT : 4.1 selecionarVantagem()
+
+activate FRONT
+
+FRONT -> TROCA : 4.2 trocarMoedas()
+
+activate TROCA
+
+TROCA -> DB : 4.3 verificarSaldo()
+
+activate DB
+
+DB --> TROCA : 4.4 saldoDisponivel
+
+alt saldo suficiente
+
+    TROCA -> DB : 4.5 registrarTransacao()
+
+    TROCA -> CUPOM : 4.6 gerarCupom()
+
+    activate CUPOM
+
+    CUPOM -> DB : 4.7 salvarCupom()
+
+    DB --> CUPOM : 4.8 cupomSalvo
+
+    deactivate CUPOM
+
+    TROCA -> NOTIF : 4.9 enviarEmailEmpresa()
+
+    activate NOTIF
+
+    NOTIF --> TROCA : 4.10 emailEnviado
+
+    deactivate NOTIF
+
+    TROCA --> FRONT : 4.11 retornarQRCode()
+
+else saldo insuficiente
+
+    TROCA --> FRONT : 4.12 erroSaldoInsuficiente()
+
+end
+
+deactivate DB
+deactivate TROCA
+
+FRONT --> Aluno : 4.13 exibirResultado()
+
+deactivate FRONT
+
+== 5. Empresa valida cupom ==
+
+Empresa -> FRONT : 5.1 lerQRCode()
+
+activate FRONT
+
+FRONT -> CUPOM : 5.2 validarCupom()
+
+activate CUPOM
+
+CUPOM -> DB : 5.3 consultarCupom()
+
+activate DB
+
+DB --> CUPOM : 5.4 cupomEncontrado()
+
+alt cupom valido
+
+    CUPOM -> DB : 5.5 atualizarStatusUtilizado()
+
+    DB --> CUPOM : 5.6 atualizacaoOk
+
+    CUPOM --> FRONT : 5.7 cupomValidado()
+
+else cupom invalido
+
+    CUPOM --> FRONT : 5.8 cupomInvalido()
+
+end
+
+deactivate DB
+deactivate CUPOM
+
+FRONT --> Empresa : 5.9 exibirResultado()
+
+deactivate FRONT
+
+@enduml
