@@ -1,180 +1,177 @@
 @startuml
-!theme plain
 
-title **Fluxo Geral do Sistema Moeda Estudantil**
-header **Sistema de Moeda Estudantil**
+title **Diagrama de Sequência Geral - Sistema Moeda Estudantil**
+header **Fluxo Principal do Negócio**
 footer **\n© Karen Joilly, Josué Goulart, Luiz Fernando**
 
 actor Professor
 actor Aluno
 actor Empresa
 
-participant "Frontend\nReact" as FRONT
-participant "AuthController" as AUTH
-participant "ProfessorService" as PROF
-participant "TrocaMoedaService" as TROCA
-participant "CupomService" as CUPOM
-participant "NotificacaoService" as NOTIF
-
+participant "Frontend\nReact" as WEB
+participant API
+participant "Auth Service" as AUTH
+participant "Moedas Service" as MOEDAS
+participant "Vantagens Service" as VANTAGENS
+participant "Cupom Service" as CUPOM
+queue "RabbitMQ\nCloudAMQP" as FILA
+participant "Notificação Service" as NOTIF
 database PostgreSQL as DB
 
-== 1. Login ==
+== 1. Professor distribui moedas ==
 
-Aluno -> FRONT : 1.1 realizarLogin()
-activate FRONT
+Professor -> WEB : acessarDistribuição()
+activate WEB
 
-FRONT -> AUTH : 1.2 autenticarUsuario()
+WEB -> API : POST /enviar-moedas
+activate API
+
+API -> AUTH : validarToken()
 activate AUTH
-
-AUTH -> DB : 1.3 SELECT usuario
-activate DB
-
-DB --> AUTH : 1.4 dadosUsuario
-deactivate DB
-
-AUTH --> FRONT : 1.5 loginValido()
+AUTH --> API : tokenValido
 deactivate AUTH
 
-FRONT --> Aluno : 1.6 acessoLiberado()
-deactivate FRONT
+API -> MOEDAS : enviarMoedas()
 
-== 2. Professor distribui moedas ==
+activate MOEDAS
 
-Professor -> FRONT : 2.1 selecionarAluno()
-
-activate FRONT
-
-FRONT -> PROF : 2.2 enviarMoedas()
-activate PROF
-
-PROF -> DB : 2.3 atualizarSaldoAluno()
+MOEDAS -> DB : validarSaldoProfessor()
 activate DB
+DB --> MOEDAS : saldoOk
 
-DB --> PROF : 2.4 saldoAtualizado
+MOEDAS -> DB : registrarTransacao()
+DB --> MOEDAS : transacaoId
 
-PROF -> DB : 2.5 registrarTransacao()
-
-DB --> PROF : 2.6 transacaoRegistrada
 deactivate DB
 
-PROF -> NOTIF : 2.7 enviarEmailAluno()
+MOEDAS --> API : distribuicaoRealizada()
+deactivate MOEDAS
+
+API -> FILA : publicarEventoDistribuicao()
+
+API --> WEB : sucesso()
+deactivate API
+
+WEB --> Professor : moedasDistribuidas()
+deactivate WEB
+
+== 2. Notificação assíncrona ==
+
+NOTIF -> FILA : consumirEvento()
+
+FILA --> NOTIF : eventoDistribuicao
+
 activate NOTIF
 
-NOTIF --> PROF : 2.8 emailEnviado
+NOTIF -> DB : buscarEmailAluno()
+activate DB
+
+DB --> NOTIF : emailAluno
+
+deactivate DB
+
+NOTIF -> Aluno : emailRecebimento()
+
 deactivate NOTIF
 
-PROF --> FRONT : 2.9 operacaoConcluida()
-deactivate PROF
+== 3. Aluno troca moedas ==
 
-FRONT --> Professor : 2.10 exibirSucesso()
-deactivate FRONT
+Aluno -> WEB : trocarMoedas()
+activate WEB
 
-== 3. Aluno consulta saldo ==
+WEB -> API : POST /trocar
+activate API
 
-Aluno -> FRONT : 3.1 consultarExtrato()
+API -> MOEDAS : verificarSaldo()
 
-activate FRONT
+activate MOEDAS
 
-FRONT -> DB : 3.2 buscarSaldoExtrato()
-
+MOEDAS -> DB : consultarSaldo()
 activate DB
 
-DB --> FRONT : 3.3 dadosExtrato()
+DB --> MOEDAS : saldoAtual
+
+MOEDAS -> DB : debitarMoedas()
+
+DB --> MOEDAS : debitoOk
 
 deactivate DB
 
-FRONT --> Aluno : 3.4 exibirExtrato()
+MOEDAS --> API : saldoAtualizado()
+deactivate MOEDAS
 
-deactivate FRONT
-
-== 4. Troca de moedas ==
-
-Aluno -> FRONT : 4.1 selecionarVantagem()
-
-activate FRONT
-
-FRONT -> TROCA : 4.2 trocarMoedas()
-
-activate TROCA
-
-TROCA -> DB : 4.3 verificarSaldo()
-
-activate DB
-
-DB --> TROCA : 4.4 saldoDisponivel
-
-alt saldo suficiente
-
-    TROCA -> DB : 4.5 registrarTransacao()
-
-    TROCA -> CUPOM : 4.6 gerarCupom()
-
-    activate CUPOM
-
-    CUPOM -> DB : 4.7 salvarCupom()
-
-    DB --> CUPOM : 4.8 cupomSalvo
-
-    deactivate CUPOM
-
-    TROCA -> NOTIF : 4.9 enviarEmailEmpresa()
-
-    activate NOTIF
-
-    NOTIF --> TROCA : 4.10 emailEnviado
-
-    deactivate NOTIF
-
-    TROCA --> FRONT : 4.11 retornarQRCode()
-
-else saldo insuficiente
-
-    TROCA --> FRONT : 4.12 erroSaldoInsuficiente()
-
-end
-
-deactivate DB
-deactivate TROCA
-
-FRONT --> Aluno : 4.13 exibirResultado()
-
-deactivate FRONT
-
-== 5. Empresa valida cupom ==
-
-Empresa -> FRONT : 5.1 lerQRCode()
-
-activate FRONT
-
-FRONT -> CUPOM : 5.2 validarCupom()
+API -> CUPOM : gerarCupom()
 
 activate CUPOM
 
-CUPOM -> DB : 5.3 consultarCupom()
-
+CUPOM -> DB : salvarCupom()
 activate DB
 
-DB --> CUPOM : 5.4 cupomEncontrado()
-
-alt cupom valido
-
-    CUPOM -> DB : 5.5 atualizarStatusUtilizado()
-
-    DB --> CUPOM : 5.6 atualizacaoOk
-
-    CUPOM --> FRONT : 5.7 cupomValidado()
-
-else cupom invalido
-
-    CUPOM --> FRONT : 5.8 cupomInvalido()
-
-end
+DB --> CUPOM : cupomId
 
 deactivate DB
+
+CUPOM --> API : cupomGerado()
+
 deactivate CUPOM
 
-FRONT --> Empresa : 5.9 exibirResultado()
+API -> FILA : publicarEventoTroca()
 
-deactivate FRONT
+API --> WEB : cupomGerado()
+deactivate API
+
+WEB --> Aluno : exibirCupom()
+deactivate WEB
+
+== 4. Notificação da troca ==
+
+NOTIF -> FILA : consumirEventoTroca()
+
+FILA --> NOTIF : eventoTroca
+
+activate NOTIF
+
+NOTIF -> DB : buscarEmailAluno()
+activate DB
+
+DB --> NOTIF : emailAluno
+
+deactivate DB
+
+NOTIF -> Aluno : emailCupomGerado()
+
+deactivate NOTIF
+
+== 5. Empresa valida cupom ==
+
+Empresa -> WEB : validarQRCode()
+activate WEB
+
+WEB -> API : POST /validar-cupom
+activate API
+
+API -> CUPOM : validarCupom()
+
+activate CUPOM
+
+CUPOM -> DB : consultarCupom()
+activate DB
+
+DB --> CUPOM : cupomValido
+
+CUPOM -> DB : marcarComoUtilizado()
+
+DB --> CUPOM : atualizado
+
+deactivate DB
+
+CUPOM --> API : validacaoSucesso()
+deactivate CUPOM
+
+API --> WEB : cupomValidado()
+deactivate API
+
+WEB --> Empresa : exibirSucesso()
+deactivate WEB
 
 @enduml
