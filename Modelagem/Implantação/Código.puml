@@ -1,74 +1,158 @@
 @startuml
+
+title DIAGRAMA DE IMPLANTAÇÃO - SISTEMA MOEDA ESTUDANTIL
+
 top to bottom direction
+
+skinparam shadowing false
 skinparam componentStyle uml2
+skinparam linetype ortho
 
-actor "Usuário\n(Web/Mobile)" as user
+skinparam node {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+}
 
-cloud "Internet" {
+skinparam database {
+    BackgroundColor #FFF8E1
+    BorderColor #F57F17
+}
 
-    node "Render Frontend" {
+skinparam component {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
 
-        node "<<device>>\nServidor Web" as frontend {
-            component "<<component>>\nFrontend React\n(Vite + Nginx)" as react
-        }
+skinparam cloud {
+    BackgroundColor #F3E5F5
+    BorderColor #7B1FA2
+}
+
+actor "Aluno" as aluno
+actor "Professor" as professor
+actor "Empresa Parceira" as empresa
+
+cloud "Internet" as internet
+
+cloud "Render Cloud" {
+
+    node "<<device>> Servidor Web" as frontend {
+
+        component "<<component>>\nFrontend React" as react
+
+        component "<<component>>\nNginx Reverse Proxy" as nginx
+
+    }
+
+    node "<<device>> Servidor de Aplicação" as backend {
+
+        component "<<component>>\nSpring Boot API" as api
+
+        component "<<component>>\nAuthController" as auth
+
+        component "<<component>>\nProfessorService" as professorService
+
+        component "<<component>>\nTrocaMoedaService" as troca
+
+        component "<<component>>\nCupomService" as cupom
+
+        component "<<component>>\nNotificacaoService" as notif
 
     }
 
-    node "Render Backend" {
-
-        node "<<device>>\nServidor Aplicação" as backend {
-
-            component "<<component>>\nAuthController" as auth
-
-            component "<<component>>\nTrocaMoedaService" as troca
-
-            component "<<component>>\nCupomService" as cupom
-
-            component "<<component>>\nNotificacaoService" as notif
-
-        }
-
-    }
-
-    database "<<device>>\nPostgreSQL Render" as db {
-        component "<<component>>\nBanco de Dados" as tabelas
-    }
-
-    queue "CloudAMQP\nRabbitMQ" as rabbit
-
-    node "Serviço Externo" {
-
-        component "SMTP Gmail" as gmail
-
-        component "QR Code API" as qr
-
-    }
+    database "<<device>> PostgreSQL Render" as postgres
 
 }
 
-user --> react : HTTPS
+cloud "CloudAMQP" {
 
-react --> auth : REST API
-react --> troca : REST API
+    queue "<<device>> RabbitMQ" as rabbit
 
-auth --> db : JDBC
-troca --> db : JDBC
-cupom --> db : JDBC
+}
+
+cloud "Serviços Externos" {
+
+    component "<<service>>\nGmail SMTP" as gmail
+
+    component "<<service>>\nQR Code API" as qr
+
+}
+
+'====================================
+' ACESSO DOS USUÁRIOS
+'====================================
+
+aluno --> internet : HTTPS
+professor --> internet : HTTPS
+empresa --> internet : HTTPS
+
+internet --> react : HTTPS
+
+'====================================
+' FRONTEND
+'====================================
+
+react --> nginx : HTTP Interno
+
+nginx --> api : REST API\nHTTPS
+
+'====================================
+' BACKEND
+'====================================
+
+api --> auth : autenticar()
+
+api --> professorService : distribuirMoedas()
+
+api --> troca : trocarMoedas()
+
+api --> cupom : gerarCupom()
+
+api --> notif : enviarNotificacao()
 
 troca --> cupom : gerarCupom()
 
-troca --> notif : enviarNotificacao()
+troca --> notif : notificarEmpresa()
 
-notif --> gmail : SMTP
+'====================================
+' BANCO DE DADOS
+'====================================
 
-troca --> rabbit : AMQP
+auth --> postgres : JDBC\nTCP 5432
 
-cupom --> qr : gerarQRCode()
+professorService --> postgres : JDBC\nTCP 5432
+
+troca --> postgres : JDBC\nTCP 5432
+
+cupom --> postgres : JDBC\nTCP 5432
+
+notif --> postgres : JDBC\nTCP 5432
+
+'====================================
+' MENSAGERIA
+'====================================
+
+troca --> rabbit : AMQP\nTCP 5672
+
+rabbit --> notif : AMQP\nTCP 5672
+
+'====================================
+' SERVIÇOS EXTERNOS
+'====================================
+
+notif --> gmail : SMTP\nTCP 587
+
+cupom --> qr : HTTPS
 
 footer
 Projeto de Software - PUC Minas
-Moeda Estudantil
-Josué Goulart • Karen Joilly • Luiz Fernando
+
+Sistema Moeda Estudantil
+
+Equipe:
+Karen Joilly
+Josué Goulart
+Luiz Fernando
 endfooter
 
 @enduml
