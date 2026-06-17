@@ -30,10 +30,10 @@ RUN useradd -u 1001 -m -s /bin/false spring && \
     chown spring:spring /app/app.jar
 USER 1001:1001
 
+# Render injeta a porta via env PORT em runtime. EXPOSE é apenas documentação.
 EXPOSE 8081
 
-# Healthcheck simples (endpoint público)
-HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
-  CMD wget -qO- http://localhost:8081/api/vantagem >/dev/null || exit 1
+# Sem HEALTHCHECK fixo: o Render faz seu próprio health check HTTP na porta $PORT.
+# Um healthcheck Docker em porta fixa derrubaria o container quando $PORT != 8081.
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

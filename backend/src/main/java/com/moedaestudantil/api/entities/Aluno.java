@@ -14,7 +14,7 @@ public class Aluno extends Usuario {
     @Column(nullable = false, unique = true, length = 14)
     private String cpf;
     
-    @Column(nullable = false, length = 12)
+    @Column(nullable = false, length = 20)
     private String rg;
     
     @Column(nullable = false, length = 255)
